@@ -3,6 +3,7 @@
 /* ══════════════════════════════════════════════
    ADMIN.JS — painel de pedidos Parada da Pizza
    Supabase + impressão + auto refresh + som forte + tela cheia
+   Atualizado: cancelar pedido + avisar cliente no WhatsApp
 ══════════════════════════════════════════════ */
 
 const ADMIN_PWD = 'marcelo2026';
@@ -59,14 +60,28 @@ function fmtData(iso) {
   }
 }
 
+function normalizarTelefoneBrasil(telefone) {
+  const limpo = String(telefone || '').replace(/\D/g, '');
+
+  if (!limpo) return '';
+
+  if (limpo.startsWith('55')) {
+    return limpo;
+  }
+
+  return '55' + limpo;
+}
+
 function aplicarFiltroAtual() {
+  const pedidosVisiveis = pedidosCarregados.filter(p => p.status !== 'cancelado');
+
   if (filtroAtual === 'todos') {
-    renderPedidos(pedidosCarregados);
+    renderPedidos(pedidosVisiveis);
     return;
   }
 
   renderPedidos(
-    pedidosCarregados.filter(p =>
+    pedidosVisiveis.filter(p =>
       filtroAtual === 'novo' ? !p.impresso : p.impresso
     )
   );
@@ -199,6 +214,7 @@ async function carregarPedidos(silencioso = false) {
     const { data, error } = await supabaseClient
       .from('pedidos')
       .select('*')
+      .neq('status', 'cancelado')
       .order('data_criacao', { ascending: false })
       .limit(100);
 
@@ -454,16 +470,26 @@ async function marcarImpresso(id) {
 }
 
 /* ════════════════════════
-   REMOVER / CANCELAR PEDIDO
+   CANCELAR PEDIDO + AVISAR CLIENTE NO WHATSAPP
 ════════════════════════ */
 
 async function removerPedido(id) {
-  if (!confirm('Deseja remover/cancelar este pedido?')) return;
+  const pedido = pedidosCarregados.find(p => p.id === id);
+  if (!pedido) return;
+
+  const confirmar = confirm(
+    `Deseja cancelar o pedido #${String(pedido.numero_pedido).padStart(3, '0')} e avisar o cliente pelo WhatsApp?`
+  );
+
+  if (!confirmar) return;
 
   try {
     const { error } = await supabaseClient
       .from('pedidos')
-      .delete()
+      .update({
+        status: 'cancelado',
+        impresso: false
+      })
       .eq('id', id);
 
     if (error) throw error;
@@ -472,9 +498,27 @@ async function removerPedido(id) {
     idsConhecidos.delete(id);
     aplicarFiltroAtual();
 
+    const telefoneFinal = normalizarTelefoneBrasil(pedido.telefone);
+
+    if (!telefoneFinal) {
+      alert('Pedido cancelado, mas o telefone do cliente não foi encontrado.');
+      return;
+    }
+
+    const mensagem = [
+      `Olá, ${pedido.nome}!`,
+      ``,
+      `Seu pedido #${String(pedido.numero_pedido).padStart(3, '0')} foi cancelado pela Parada da Pizza.`,
+      ``,
+      `Caso tenha dúvidas ou queira fazer um novo pedido, fale conosco por aqui.`
+    ].join('\n');
+
+    const url = `https://wa.me/${telefoneFinal}?text=${encodeURIComponent(mensagem)}`;
+    window.open(url, '_blank');
+
   } catch (err) {
-    console.error('Erro ao remover pedido:', err);
-    alert('Não foi possível remover o pedido. Tente novamente.');
+    console.error('Erro ao cancelar pedido:', err);
+    alert('Não foi possível cancelar o pedido. Tente novamente.');
   }
 }
 
