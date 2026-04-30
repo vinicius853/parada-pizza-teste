@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Parada da Pizza — Pedidos Online</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+<header class="site-header" id="siteHeader">
+  <div class="header-inner">
+    <div class="brand" id="brandSecretTrigger" title="Parada da Pizza">
+      <span class="brand-emoji">🍕</span>
+      <div class="brand-txt">
+        <strong id="brandNameTrigger">Parada da Pizza</strong>
+        <small><span class="dot-live"></span>Aberto · Av. Tancredo Neves, 427</small>
+      </div>
+    </div>
+
+    <nav class="top-nav">
+      <button class="nav-btn active" id="navCardapio" onclick="goView('cardapio')">Cardápio</button>
+    </nav>
+  </div>
+</header>
+
+<div id="appRoot">
+
+  <div id="viewCardapio" class="view active">
+
+    <div class="hero-band">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <h1>Pizza artesanal<br><em>na sua porta</em></h1>
+          <p>Massa fresquinha · Ingredientes selecionados · Entrega rápida</p>
+          <a href="#catAnchor" class="hero-btn">Ver cardápio completo ↓</a>
+        </div>
+        <div class="hero-pizza">🍕</div>
+      </div>
+    </div>
+
+    <div id="catAnchor" class="cat-bar-outer">
+      <div class="cat-bar" id="catBar">
+        <button class="cat-pill active" data-cat="all">Todos</button>
+        <button class="cat-pill" data-cat="salgadas">🍕 Salgadas</button>
+        <button class="cat-pill" data-cat="doces">🍫 Doces</button>
+        <button class="cat-pill" data-cat="esfihas">🥙 Esfihas</button>
+        <button class="cat-pill" data-cat="adicionais">➕ Adicionais</button>
+        <button class="cat-pill" data-cat="bebidas">🥤 Bebidas</button>
+      </div>
+    </div>
+
+    <div class="catalog" id="catalog"></div>
+
+  </div>
+
+  <div id="viewCheckout" class="view">
+    <div class="checkout-wrap">
+
+      <div class="co-topbar">
+        <button class="back-btn" onclick="goView('cardapio')">← Voltar</button>
+        <h2>Finalizar Pedido</h2>
+      </div>
+
+      <div class="co-section">
+        <div class="co-section-title">Seu Pedido</div>
+        <div id="coCartItems" class="co-cart-list"></div>
+        <div class="co-cart-subtotal">
+          <span>Subtotal</span>
+          <strong id="coSubDisplay">R$ 0,00</strong>
+        </div>
+      </div>
+
+      <div class="co-section">
+        <div class="co-section-title">Seus Dados</div>
+        <div class="frow">
+          <div class="fgroup">
+            <label>Nome completo *</label>
+            <input type="text" id="fNome" placeholder="Seu nome"/>
+          </div>
+          <div class="fgroup">
+            <label>WhatsApp *</label>
+            <input type="tel" id="fTel" placeholder="(24) 99999-9999"/>
+          </div>
+        </div>
+      </div>
+
+      <div class="co-section">
+        <div class="co-section-title">Tipo de Pedido</div>
+        <div class="type-opts">
+          <label class="type-opt" id="lblRetirada">
+            <input type="radio" name="tipo" value="retirada" onchange="onTipoChange()"/>
+            <div class="type-opt-body">
+              <span class="type-ico">🏪</span>
+              <div><strong>Retirada</strong><small>Av. Tancredo Neves, 427</small></div>
+            </div>
+          </label>
+
+          <label class="type-opt" id="lblEntrega">
+            <input type="radio" name="tipo" value="entrega" onchange="onTipoChange()"/>
+            <div class="type-opt-body">
+              <span class="type-ico">🛵</span>
+              <div><strong>Entrega</strong><small>Somente Barra Mansa</small></div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="co-section" id="enderecoBlock" style="display:none">
+        <div class="co-section-title">Endereço de Entrega</div>
+
+        <div class="frow">
+          <div class="fgroup fgrow2">
+            <label>CEP <small style="font-weight:600;color:#888;text-transform:none">(opcional)</small></label>
+            <div class="cep-wrap">
+              <input
+                type="text"
+                id="fCep"
+                placeholder="00000-000"
+                maxlength="9"
+                oninput="maskCep(this)"
+                onkeydown="if(event.key==='Enter')buscarCep()"
+              />
+              <button type="button" class="btn-cep" onclick="buscarCep()">Buscar</button>
+            </div>
+            <span id="cepMsg" class="fmsg"></span>
+          </div>
+        </div>
+
+        <div class="frow">
+          <div class="fgroup fgrow3">
+            <label>Rua *</label>
+            <input type="text" id="fRua" placeholder="Rua..."/>
+          </div>
+          <div class="fgroup">
+            <label>Número *</label>
+            <input type="text" id="fNum" placeholder="Nº"/>
+          </div>
+        </div>
+
+        <div class="frow">
+          <div class="fgroup">
+            <label>Bairro *</label>
+            <input
+              type="text"
+              id="fBairro"
+              placeholder="Bairro"
+              oninput="onBairroInput()"
+              onchange="onBairroInput()"
+              onblur="onBairroInput()"
+            />
+          </div>
+
+          <div class="fgroup fgrow2">
+            <label>Cidade</label>
+            <input type="text" id="fCidade" value="Barra Mansa - RJ" readonly/>
+          </div>
+        </div>
+
+        <div id="taxaMsg" class="taxa-msg" style="display:none"></div>
+      </div>
+
+      <div class="co-section">
+        <div class="co-section-title">Pagamento</div>
+
+        <div class="pay-opts">
+          <label class="pay-opt">
+            <input type="radio" name="pagamento" value="pix" onchange="onPagChange()"/>
+            <span class="pay-ico">🔑</span>
+            <div><strong>Pix</strong><small>Sem taxa</small></div>
+          </label>
+
+          <label class="pay-opt">
+            <input type="radio" name="pagamento" value="cartao" onchange="onPagChange()"/>
+            <span class="pay-ico">💳</span>
+            <div><strong>Cartão</strong><small>Sem taxa extra</small></div>
+          </label>
+
+          <label class="pay-opt">
+            <input type="radio" name="pagamento" value="dinheiro" onchange="onPagChange()"/>
+            <span class="pay-ico">💵</span>
+            <div><strong>Dinheiro</strong><small>Troco disponível</small></div>
+          </label>
+        </div>
+
+        <div id="trocoBox" style="display:none" class="troco-box">
+          <label class="troco-toggle">
+            <input type="checkbox" id="cbTroco" onchange="onTrocoToggle()"/>
+            <span>Preciso de troco</span>
+          </label>
+
+          <div id="trocoFields" style="display:none">
+            <div class="fgroup" style="margin-top:12px">
+              <label>Vai pagar com quanto?</label>
+              <input
+                type="number"
+                id="fValorPago"
+                placeholder="R$ 0,00"
+                min="0"
+                step="0.01"
+                oninput="calcTroco()"
+              />
+            </div>
+            <div id="trocoResult" class="troco-result"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="co-section totals-section" id="totaisBlock">
+        <div class="total-row"><span>Subtotal</span><span id="ttSub">R$ 0,00</span></div>
+        <div class="total-row" id="rowTaxaEntrega" style="display:none"><span>Taxa de entrega</span><span id="ttEntrega">R$ 0,00</span></div>
+        <div class="total-row total-grand"><span>Total</span><span id="ttTotal">R$ 0,00</span></div>
+      </div>
+
+      <button class="btn-whatsapp" onclick="finalizarPedido()">
+        Enviar Pedido pelo WhatsApp
+      </button>
+
+    </div>
+  </div>
+
+  <div id="viewPainel" class="view">
+    <div class="painel-wrap">
+
+      <div class="painel-topbar">
+        <button class="back-btn" onclick="goView('cardapio')">← Voltar</button>
+        <div>
+          <h2>Painel de Pedidos</h2>
+          <small id="painelAdminLabel">Admin: paradadapizza</small>
+        </div>
+        <button class="btn-limpar-todos" onclick="limparTodos()">Limpar todos</button>
+      </div>
+
+      <div id="painelList" class="painel-list"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="cart-float" id="cartFloat" style="display:none" onclick="abrirCarrinho()">
+  <div class="cf-left">
+    <span class="cf-badge" id="cfBadge">0</span>
+    <span class="cf-label">Ver carrinho</span>
+  </div>
+  <span class="cf-total" id="cfTotal">R$ 0,00</span>
+  <span class="cf-arrow">›</span>
+</div>
+
+<div class="overlay" id="overlaySize" onclick="overlayClickSize(event)">
+  <div class="modal-size" id="modalSize">
+    <button class="modal-x" onclick="fecharSizeModal()">✕</button>
+    <div class="ms-product-name" id="msProdName"></div>
+    <div class="ms-product-desc" id="msProdDesc"></div>
+    <div class="ms-sizes" id="msSizes"></div>
+    <button class="btn-confirmar-size" id="btnConfirmar" onclick="confirmarAdicao()">
+      Adicionar ao carrinho
+    </button>
+  </div>
+</div>
+
+<div class="overlay" id="overlayCart" onclick="overlayClickCart(event)">
+  <div class="cart-drawer" id="cartDrawer">
+    <div class="drawer-head">
+      <h3>Carrinho</h3>
+      <button onclick="fecharCarrinho()">✕</button>
+    </div>
+    <div class="drawer-body" id="drawerBody"></div>
+    <div class="drawer-foot">
+      <div class="drawer-total-row">
+        <span>Subtotal</span>
+        <strong id="drawerTotal">R$ 0,00</strong>
+      </div>
+      <button class="btn-checkout" onclick="irCheckout()">Finalizar pedido →</button>
+    </div>
+  </div>
+</div>
+
+<div id="printArea" class="print-only"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+
+<script src="js/dados.js"></script>
+<script src="js/carrinho.js"></script>
+<script src="js/checkout.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
