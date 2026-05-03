@@ -121,25 +121,40 @@ const CARDAPIO = [
   simples(40, 'adicionais', 'Cream Cheese', 'Adicional de cream cheese', 10),
 
   /* ─── Bebidas ─── */
-  variacao(41, 'bebidas', 'Coca-Cola 2L', 'Escolha entre tradicional ou zero açúcar', [
+	variacao(41, 'bebidas', 'Coca-Cola 2L', 'Escolha entre tradicional ou zero açúcar', [
   { label: 'Coca-Cola Normal 2L', preco: 16 },
   { label: 'Coca-Cola Zero 2L', preco: 16 }
 ], 'img/cocadupla.jpg'),
-
-simples(42, 'bebidas', 'Sprite 2L', 'Refrigerante 2 litros', 12, 'img/sprite.jpg'),
-simples(43, 'bebidas', 'Fanta 2L', 'Refrigerante 2 litros', 12, 'img/fanta.jpg'),
-simples(44, 'bebidas', 'Coca-Cola 1L', 'Refrigerante 1 litro', 10, 'img/coca2.jpg'),
-simples(45, 'bebidas', 'Coca-Cola 600ml', 'Refrigerante 600ml', 8, 'img/coca600.jpg'),
-simples(46, 'bebidas', 'Coca-Cola Lata 350ml', 'Refrigerante lata 350ml', 6, 'img/coca350.jpg'),
-simples(47, 'bebidas', 'Del Valle 1,5L', 'Suco 1,5 litros', 13, 'img/delvalefrut.jpg'),
-simples(48, 'bebidas', 'Del Valle Fruit 1L', 'Suco 1 litro', 8, 'img/frut1.jpg'),
-simples(49, 'bebidas', 'Del Valle Caixa 1L', 'Suco 1 litro', 11, 'img/delvalecx.jpg'),
-simples(50, 'bebidas', 'Matte 1,5L', 'Chá Matte 1,5 litros', 11, 'img/mate.jpg'),
-simples(51, 'bebidas', 'Água 1,5L', 'Sem gás', 7, 'img/agua15.jpg'),
-simples(52, 'bebidas', 'Água 510ml', 'Sem gás', 4, 'img/agua.jpg'),
-simples(53, 'bebidas', 'Água com gás 510ml', 'Com gás', 5, 'img/aguagas.jpg'),
-simples(54, 'bebidas', 'Sprite Lemon', 'Refrigerante sabor limão', 7, 'img/lemon.jpg'),
-simples(55, 'bebidas', 'Monster 473ml', 'Energético lata 473ml', 13, 'img/energetico.jpg'),
+	variacao(42, 'bebidas', 'Fanta 2L', 'Escolha o sabor', [
+  { label: 'Fanta Laranja 2L', preco: 12 },
+  { label: 'Fanta Uva 2L', preco: 12 }
+], 'img/fanta2.jpg'),
+	variacao(43, 'bebidas', 'Coca-Cola 1L', 'Escolha entre tradicional ou zero açúcar', [
+  { label: 'Coca-Cola Normal 1L', preco: 10 },
+  { label: 'Coca-Cola Zero 1L', preco: 10 }
+], 'img/coca1.jpg'),
+	simples(44, 'bebidas', 'Guaraná Mantiqueira 2L', 'Refrigerante 2 litros', 9, 'img/mantiqueira.jpg'),
+	simples(45, 'bebidas', 'Sprite 2L', 'Refrigerante 2 litros', 12, 'img/sprite.jpg'),
+	simples(46, 'bebidas', 'Coca-Cola 600ml', 'Refrigerante 600ml', 8, 'img/coca600.jpg'),
+	simples(47, 'bebidas', 'Coca-Cola Lata 350ml', 'Refrigerante lata 350ml', 6, 'img/coca350.jpg'),
+	variacao(48, 'bebidas', 'Del Valle 1,5L', 'Escolha o sabor', [
+  { label: 'Suco de Uva 1,5L', preco: 13 },
+  { label: 'Suco de Laranja 1,5L', preco: 13 }
+], 'img/delvalefrut3.jpg'),
+	variacao(49, 'bebidas', 'Del Valle Fruit 1L', 'Escolha o sabor', [
+  { label: 'Suco de Uva 1L', preco: 8 },
+  { label: 'Suco de Laranja 1L', preco: 8 }
+], 'img/frut2.jpg'),
+	variacao(50, 'bebidas', 'Del Valle Caixa 1L', 'Escolha o sabor', [
+  { label: 'Suco de Uva Caixa 1L', preco: 11 },
+  { label: 'Suco de Laranja Caixa 1L', preco: 11 }
+], 'img/delvalecx2.jpg'),
+	simples(51, 'bebidas', 'Matte 1,5L', 'Chá Matte 1,5 litros', 11, 'img/mate.jpg'),
+	simples(52, 'bebidas', 'Água 1,5L', 'Sem gás', 7, 'img/agua15.jpg'),
+	simples(53, 'bebidas', 'Água 510ml', 'Sem gás', 4, 'img/agua.jpg'),
+	simples(54, 'bebidas', 'Água com gás 510ml', 'Com gás', 5, 'img/aguagas.jpg'),
+	simples(55, 'bebidas', 'Sprite Lemon', 'Refrigerante sabor limão', 7, 'img/lemon.jpg'),
+	simples(56, 'bebidas', 'Monster 473ml', 'Energético lata 473ml', 13, 'img/energetico.jpg'),
 ];
 
 /* ── Estado global da aplicação ── */

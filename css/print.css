@@ -1,0 +1,72 @@
+/* ═══════════════════════════════════════════════
+   PARADA DA PIZZA · print.css
+   Impressão térmica do painel de pedidos online
+   ═══════════════════════════════════════════════ */
+
+#printArea { display: none; }
+
+    @media print {
+      body > *:not(#printArea) { display: none !important; }
+
+      #printArea {
+        display: block !important;
+        width: 80mm !important;
+        max-width: 80mm !important;
+        padding: 8px !important;
+        font-family: "Courier New", monospace !important;
+        font-size: 18px !important;
+        line-height: 1.55 !important;
+        font-weight: 700 !important;
+        color: #000 !important;
+        background: #fff !important;
+      }
+
+      .prt-logo {
+        text-align: center;
+        font-size: 22px !important;
+        font-weight: 900 !important;
+        padding-bottom: 6px;
+      }
+
+      .prt-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 4px;
+        font-size: 18px !important;
+        margin-bottom: 5px !important;
+      }
+
+      .prt-row .r {
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .prt-section-title {
+        font-size: 18px !important;
+        font-weight: 900 !important;
+        margin: 6px 0 4px;
+      }
+
+      .prt-total {
+        font-size: 22px !important;
+        font-weight: 900 !important;
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid #000;
+      }
+
+      .prt-rodape {
+        text-align: center;
+        font-size: 15px !important;
+        line-height: 1.4 !important;
+        margin-top: 10px;
+        padding-top: 6px;
+        border-top: 1px dashed #000;
+      }
+
+      .prt-sep {
+        border: none;
+        border-top: 1px dashed #000;
+        margin: 8px 0;
+      }
+    }

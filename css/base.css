@@ -1,0 +1,57 @@
+/* ═══════════════════════════════════════════════
+   PARADA DA PIZZA · base.css
+   Reset, fontes, variáveis e base visual global
+   ═══════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap');
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html { scroll-behavior: smooth; }
+
+:root {
+  --red: #CC1B1B;
+  --red-d: #A51515;
+  --red-soft: #FFF2F2;
+  --yellow: #F5C800;
+  --yellow-soft: #FFFBE6;
+  --green-ok: #15803D;
+  --green: #16a34a;
+  --green-bg: #DCFCE7;
+  --dark: #111111;
+  --dark-system: #111827;
+  --dark2: #222222;
+  --mid: #555555;
+  --light: #888888;
+  --muted: #6b7280;
+  --border: #E5E5E5;
+  --border-system: #e5e7eb;
+  --bg: #F6F6F6;
+  --bg-system: #f1f5f9;
+  --white: #FFFFFF;
+  --card-r: 14px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.08);
+  --shadow-md: 0 6px 24px rgba(0,0,0,.12);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,.18);
+  --font-head: 'Barlow Condensed', sans-serif;
+  --font-body: 'Barlow', sans-serif;
+  --tr: .2s ease;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--dark);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+}

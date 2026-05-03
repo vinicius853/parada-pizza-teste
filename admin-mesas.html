@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Mesas - Parada da Pizza</title>
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/mesas.css">
+</head>
+
+<body>
+
+  <header class="topo-sistema">
+    <div class="logo-area">
+      <span class="badge">PARADA DA PIZZA</span>
+      <h1>Controle de Mesas</h1>
+    </div>
+
+    <div class="status-sistema">
+      <span class="dot"></span>
+      Sistema ativo
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="resumo">
+      <div class="card-resumo">
+        <span>Mesas</span>
+        <strong id="totalMesas">20</strong>
+      </div>
+
+      <div class="card-resumo livre">
+        <span>Livres</span>
+        <strong id="mesasLivres">--</strong>
+      </div>
+
+      <div class="card-resumo ocupada">
+        <span>Ocupadas</span>
+        <strong id="mesasOcupadas">--</strong>
+      </div>
+    </section>
+
+    <section class="bloco">
+      <div class="bloco-topo">
+        <h2>Salão</h2>
+        <span>Clique em uma mesa para abrir</span>
+      </div>
+
+      <div class="mesas" id="mesas"></div>
+    </section>
+
+    <section class="bloco">
+      <div id="painel" class="painel">
+        <div class="painel-vazio">
+          Selecione uma mesa para abrir a comanda
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="js/dados.js"></script>
+  <script src="js/mesas-ui.js"></script>
+  <script src="js/mesas-produtos.js"></script>
+  <script src="js/mesas-impressao.js"></script>
+  <script src="js/mesas.js"></script>
+
+</body>
+</html>

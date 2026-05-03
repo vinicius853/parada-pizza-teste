@@ -1,23 +1,23 @@
 'use strict';
 
 /* ══════════════════════════════════════════════
-   ADMIN.JS — painel de pedidos Parada da Pizza
-   Supabase + impressão + auto refresh + som forte + tela cheia
-   Atualizado: cancelar pedido + avisar cliente no WhatsApp
+   ADMIN.JS — Parada da Pizza
+   Painel com Supabase + impressão + auto refresh
+   + som + tela cheia + WhatsApp por status
 ══════════════════════════════════════════════ */
 
 const ADMIN_PWD = 'marcelo2026';
 const AUTO_REFRESH_MS = 15000;
 
 let pedidosCarregados = [];
-let filtroAtual = 'todos';
+let filtroPedidosAtual = 'todos';
 let autoRefreshId = null;
 let primeiraCarga = true;
 let idsConhecidos = new Set();
 let audioLiberado = false;
 
 /* ════════════════════════
-   AUTENTICAÇÃO SIMPLES
+   LOGIN
 ════════════════════════ */
 
 function verificarSenha() {
@@ -32,12 +32,11 @@ function verificarSenha() {
 
     audioLiberado = true;
     tocarBeepSilencioso();
-    inserirBotaoTelaCheia();
 
     carregarPedidos(false);
     iniciarAutoRefresh();
   } else {
-    erro.textContent = 'Senha incorreta.';
+    if (erro) erro.textContent = 'Senha incorreta.';
     input.value = '';
     input.focus();
   }
@@ -53,6 +52,7 @@ function fmtPreco(v) {
 
 function fmtData(iso) {
   if (!iso) return '—';
+
   try {
     return new Date(iso).toLocaleString('pt-BR');
   } catch {
@@ -65,45 +65,39 @@ function normalizarTelefoneBrasil(telefone) {
 
   if (!limpo) return '';
 
-  if (limpo.startsWith('55')) {
-    return limpo;
+  return limpo.startsWith('55') ? limpo : '55' + limpo;
+}
+
+function abrirWhatsAppCliente(pedido, mensagem) {
+  const telefoneFinal = normalizarTelefoneBrasil(pedido.telefone);
+
+  if (!telefoneFinal) {
+    alert('Telefone do cliente não encontrado.');
+    return;
   }
 
-  return '55' + limpo;
+  const url = `https://wa.me/${telefoneFinal}?text=${encodeURIComponent(mensagem)}`;
+  window.open(url, '_blank');
 }
 
 function aplicarFiltroAtual() {
   const pedidosVisiveis = pedidosCarregados.filter(p => p.status !== 'cancelado');
 
-  if (filtroAtual === 'todos') {
+  if (filtroPedidosAtual === 'todos') {
     renderPedidos(pedidosVisiveis);
     return;
   }
 
   renderPedidos(
     pedidosVisiveis.filter(p =>
-      filtroAtual === 'novo' ? !p.impresso : p.impresso
+      filtroPedidosAtual === 'novo' ? !p.impresso : p.impresso
     )
   );
 }
 
 /* ════════════════════════
-   MODO TELA CHEIA
+   TELA CHEIA
 ════════════════════════ */
-
-function inserirBotaoTelaCheia() {
-  const topbar = document.querySelector('.painel-topbar');
-  if (!topbar || document.getElementById('btnTelaCheia')) return;
-
-  const btn = document.createElement('button');
-  btn.id = 'btnTelaCheia';
-  btn.type = 'button';
-  btn.className = 'btn-atualizar';
-  btn.innerHTML = '📺 Tela Cheia';
-  btn.onclick = ativarTelaCheia;
-
-  topbar.appendChild(btn);
-}
 
 function ativarTelaCheia() {
   const el = document.documentElement;
@@ -120,7 +114,7 @@ function ativarTelaCheia() {
 }
 
 /* ════════════════════════
-   SOM DE NOVO PEDIDO
+   SOM
 ════════════════════════ */
 
 function tocarBeepSilencioso() {
@@ -193,7 +187,7 @@ function iniciarAutoRefresh() {
 }
 
 /* ════════════════════════
-   CARREGAR PEDIDOS DO SUPABASE
+   CARREGAR PEDIDOS
 ════════════════════════ */
 
 async function carregarPedidos(silencioso = false) {
@@ -256,9 +250,7 @@ async function carregarPedidos(silencioso = false) {
       `;
     }
 
-    if (statusEl) {
-      statusEl.textContent = 'Erro ao atualizar pedidos.';
-    }
+    if (statusEl) statusEl.textContent = 'Erro ao atualizar pedidos.';
   } finally {
     if (btnAtu) btnAtu.disabled = false;
   }
@@ -282,7 +274,7 @@ function destacarPedidosNovos(ids) {
 }
 
 /* ════════════════════════
-   RENDERIZAR LISTA
+   RENDERIZAR PEDIDOS
 ════════════════════════ */
 
 function renderPedidos(lista) {
@@ -308,6 +300,7 @@ function renderPedidos(lista) {
     card.id = `card-${p.id}`;
 
     const itens = Array.isArray(p.itens) ? p.itens : [];
+
     const itensHtml = itens
       .map(i => `${i.qtd}x ${i.nome} (${i.tamanho}) — R$ ${fmtPreco(i.preco * i.qtd)}`)
       .join('\n');
@@ -315,8 +308,23 @@ function renderPedidos(lista) {
     const badgeClass = p.tipo === 'retirada' ? 'badge-retirada' : 'badge-entrega';
     const badgeLabel = p.tipo === 'retirada' ? '🏪 Retirada' : '🛵 Entrega';
 
-    const statusClass = p.impresso ? 'status-impresso' : 'status-novo';
-    const statusLabel = p.impresso ? '✅ Impresso' : '🆕 Novo';
+    let statusClass = 'status-novo';
+    let statusLabel = '🆕 Novo';
+
+    if (p.status === 'confirmado') {
+      statusClass = 'status-novo';
+      statusLabel = '✅ Confirmado';
+    }
+
+    if (p.status === 'saiu_entrega') {
+      statusClass = 'badge-entrega';
+      statusLabel = '🛵 Saiu';
+    }
+
+    if (p.impresso || p.status === 'impresso') {
+      statusClass = 'status-impresso';
+      statusLabel = '✅ Impresso';
+    }
 
     let endHtml = '';
     if (p.endereco) {
@@ -336,6 +344,7 @@ function renderPedidos(lista) {
           <div class="pedido-num">Pedido #${String(p.numero_pedido).padStart(3, '0')}</div>
           <div class="pedido-time">${fmtData(p.data_criacao)}</div>
         </div>
+
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
           <span class="pedido-badge ${badgeClass}">${badgeLabel}</span>
           <span class="pedido-badge ${statusClass}">${statusLabel}</span>
@@ -348,7 +357,9 @@ function renderPedidos(lista) {
       </div>
 
       <pre class="pedido-items">${itensHtml}</pre>
+
       ${endHtml}
+
       <div class="pedido-pay">💳 ${p.pagamento}</div>
       ${trocoHtml}
 
@@ -357,17 +368,106 @@ function renderPedidos(lista) {
         <span>R$ ${fmtPreco(p.total)}</span>
       </div>
 
-      <div class="pedido-actions">
+      <div class="pedido-actions" style="flex-wrap:wrap">
+        <button class="btn-marcar" onclick="confirmarPedido('${p.id}')" ${p.status === 'confirmado' || p.status === 'saiu_entrega' || p.impresso ? 'disabled' : ''}>
+          ${p.status === 'confirmado' || p.status === 'saiu_entrega' ? '✅ Confirmado' : '✅ Confirmar'}
+        </button>
+
+        <button class="btn-marcar" onclick="pedidoSaiuEntrega('${p.id}')" ${p.tipo !== 'entrega' || p.status === 'saiu_entrega' || p.impresso ? 'disabled' : ''}>
+          ${p.status === 'saiu_entrega' ? '🛵 Saiu' : '🛵 Saiu entrega'}
+        </button>
+
         <button class="btn-imprimir" onclick="imprimirPedido('${p.id}')">🖨️ Imprimir</button>
+
         <button class="btn-marcar" onclick="marcarImpresso('${p.id}')" ${p.impresso ? 'disabled' : ''}>
           ${p.impresso ? '✓ Impresso' : '✓ Marcar'}
         </button>
+
         <button class="btn-remover-pedido" onclick="removerPedido('${p.id}')">✕</button>
       </div>
     `;
 
     listEl.appendChild(card);
   });
+}
+
+/* ════════════════════════
+   CONFIRMAR PEDIDO
+════════════════════════ */
+
+async function confirmarPedido(id) {
+  const pedido = pedidosCarregados.find(p => p.id === id);
+  if (!pedido) return;
+
+  try {
+    const { error } = await supabaseClient
+      .from('pedidos')
+      .update({ status: 'confirmado' })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    pedido.status = 'confirmado';
+
+    abrirWhatsAppCliente(
+      pedido,
+      [
+        `Olá, ${pedido.nome}!`,
+        ``,
+        `Seu pedido #${String(pedido.numero_pedido).padStart(3, '0')} foi confirmado pela Parada da Pizza. `,
+        ``,
+        `Já iniciamos o preparo do seu pedido. `
+      ].join('\n')
+    );
+
+    aplicarFiltroAtual();
+
+  } catch (err) {
+    console.error('Erro ao confirmar pedido:', err);
+    alert('Não foi possível confirmar o pedido.');
+  }
+}
+
+/* ════════════════════════
+   SAIU PARA ENTREGA
+════════════════════════ */
+
+async function pedidoSaiuEntrega(id) {
+  const pedido = pedidosCarregados.find(p => p.id === id);
+  if (!pedido) return;
+
+  if (pedido.tipo !== 'entrega') {
+    alert('Este pedido é de retirada, não de entrega.');
+    return;
+  }
+
+  try {
+    const { error } = await supabaseClient
+      .from('pedidos')
+      .update({ status: 'saiu_entrega' })
+      .eq('id', id);
+
+    if (error) throw error;
+
+    pedido.status = 'saiu_entrega';
+
+    abrirWhatsAppCliente(
+      pedido,
+      [
+        `Olá, ${pedido.nome}!`,
+        ``,
+        `Seu pedido #${String(pedido.numero_pedido).padStart(3, '0')} saiu para entrega. 🛵🍕`,
+        ``,
+        `Fique atento ao telefone/portão.`
+      ].join('\n')
+    );
+
+    aplicarFiltroAtual();
+
+  } catch (err) {
+    console.error('Erro ao marcar saída para entrega:', err);
+    alert('Não foi possível atualizar o pedido.');
+  }
 }
 
 /* ════════════════════════
@@ -457,6 +557,7 @@ async function marcarImpresso(id) {
     if (error) throw error;
 
     const pedido = pedidosCarregados.find(p => p.id === id);
+
     if (pedido) {
       pedido.impresso = true;
       pedido.status = 'impresso';
@@ -470,7 +571,7 @@ async function marcarImpresso(id) {
 }
 
 /* ════════════════════════
-   CANCELAR PEDIDO + AVISAR CLIENTE NO WHATSAPP
+   CANCELAR PEDIDO
 ════════════════════════ */
 
 async function removerPedido(id) {
@@ -498,23 +599,16 @@ async function removerPedido(id) {
     idsConhecidos.delete(id);
     aplicarFiltroAtual();
 
-    const telefoneFinal = normalizarTelefoneBrasil(pedido.telefone);
-
-    if (!telefoneFinal) {
-      alert('Pedido cancelado, mas o telefone do cliente não foi encontrado.');
-      return;
-    }
-
-    const mensagem = [
-      `Olá, ${pedido.nome}!`,
-      ``,
-      `Seu pedido #${String(pedido.numero_pedido).padStart(3, '0')} foi cancelado pela Parada da Pizza.`,
-      ``,
-      `Caso tenha dúvidas ou queira fazer um novo pedido, fale conosco por aqui.`
-    ].join('\n');
-
-    const url = `https://wa.me/${telefoneFinal}?text=${encodeURIComponent(mensagem)}`;
-    window.open(url, '_blank');
+    abrirWhatsAppCliente(
+      pedido,
+      [
+        `Olá, ${pedido.nome}!`,
+        ``,
+        `Seu pedido #${String(pedido.numero_pedido).padStart(3, '0')} foi cancelado pela Parada da Pizza.`,
+        ``,
+        `Caso tenha dúvidas ou queira fazer um novo pedido, fale conosco por aqui.`
+      ].join('\n')
+    );
 
   } catch (err) {
     console.error('Erro ao cancelar pedido:', err);
@@ -523,11 +617,11 @@ async function removerPedido(id) {
 }
 
 /* ════════════════════════
-   FILTRO DE STATUS
+   FILTRO
 ════════════════════════ */
 
 function filtrarPedidos(status) {
-  filtroAtual = status;
+  filtroPedidosAtual == status;
 
   document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
 
@@ -538,7 +632,7 @@ function filtrarPedidos(status) {
 }
 
 /* ════════════════════════
-   ENTER NA TELA DE LOGIN
+   DOM READY
 ════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -552,6 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
     input.addEventListener('keydown', e => {
       if (e.key === 'Enter') verificarSenha();
     });
+
     input.focus();
   }
 });

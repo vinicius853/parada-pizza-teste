@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel Operacional - Parada da Pizza</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/mesas.css">
+  <link rel="stylesheet" href="css/operacional.css">
+  <link rel="stylesheet" href="css/print.css">
+</head>
+
+<body>
+
+  <div id="loginScreen" class="login-screen">
+    <div class="login-box">
+      <div class="login-icon">🔒</div>
+      <h2>ACESSO RESTRITO</h2>
+      <p>Digite a senha para acessar o painel</p>
+
+      <input type="password" id="senhaInput" placeholder="Senha">
+      <button onclick="validarSenha()">Entrar</button>
+    </div>
+  </div>
+
+  <div id="appOperacional" style="display:none;">
+
+    <header class="topo-operacional">
+      <div>
+        <strong>PARADA DA PIZZA</strong>
+        <span>Painel Operacional</span>
+      </div>
+
+      <div class="tabs">
+        <button onclick="trocarTela('pedidos')" id="tabPedidos" class="active">
+          📋 Pedidos
+        </button>
+
+        <button onclick="trocarTela('mesas')" id="tabMesas">
+          🍽 Mesas
+        </button>
+      </div>
+    </header>
+
+    <section id="telaPedidos">
+      <div class="painel-wrap">
+
+        <div class="painel-topbar">
+          <h2>📋 Pedidos</h2>
+
+          <button class="btn-atualizar" id="btnAtualizar" onclick="carregarPedidos()">
+            🔄 Atualizar
+          </button>
+
+          <button class="btn-atualizar btn-fullscreen" id="btnTelaCheia" onclick="ativarTelaCheia()">
+            📺 Tela Cheia
+          </button>
+
+          <div class="status-msg" id="statusMsg"></div>
+        </div>
+
+        <div class="filtros">
+          <button class="filtro-btn active" data-filtro="todos" onclick="filtrarPedidos('todos')">
+            Todos
+          </button>
+
+          <button class="filtro-btn" data-filtro="novo" onclick="filtrarPedidos('novo')">
+            🆕 Novos
+          </button>
+
+          <button class="filtro-btn" data-filtro="impresso" onclick="filtrarPedidos('impresso')">
+            ✅ Impressos
+          </button>
+        </div>
+
+        <div class="painel-list" id="painelList">
+          <div class="painel-loading">Aguardando autenticação...</div>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="telaMesas" style="display:none;">
+      <main class="container">
+
+        <section class="resumo">
+          <div class="card-resumo">
+            <span>Mesas</span>
+            <strong id="totalMesas">20</strong>
+          </div>
+
+          <div class="card-resumo livre">
+            <span>Livres</span>
+            <strong id="mesasLivres">--</strong>
+          </div>
+
+          <div class="card-resumo ocupada">
+            <span>Ocupadas</span>
+            <strong id="mesasOcupadas">--</strong>
+          </div>
+        </section>
+
+        <section class="bloco">
+          <div class="bloco-topo">
+            <h2>Salão</h2>
+            <span>Clique em uma mesa para abrir</span>
+          </div>
+
+          <div class="mesas" id="mesas"></div>
+        </section>
+
+        <section class="bloco">
+          <div id="painel" class="painel">
+            <div class="painel-vazio">
+              Selecione uma mesa para abrir a comanda
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </section>
+
+  </div>
+
+  <div id="printArea"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="js/dados.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/admin.js"></script>
+
+  <script src="js/mesas-ui.js"></script>
+  <script src="js/mesas-produtos.js"></script>
+  <script src="js/mesas-impressao.js"></script>
+  <script src="js/mesas.js"></script>
+
+  <script>
+    function validarSenha() {
+      const input = document.getElementById('senhaInput');
+      const senha = input.value.trim();
+
+      if (senha === "marcelo2026") {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appOperacional').style.display = 'block';
+
+        iniciarPedidos();
+        return;
+      }
+
+      alert("Senha incorreta");
+      input.value = "";
+      input.focus();
+    }
+
+    function trocarTela(tela) {
+      document.getElementById('telaPedidos').style.display = tela === 'pedidos' ? 'block' : 'none';
+      document.getElementById('telaMesas').style.display = tela === 'mesas' ? 'block' : 'none';
+
+      document.getElementById('tabPedidos').classList.toggle('active', tela === 'pedidos');
+      document.getElementById('tabMesas').classList.toggle('active', tela === 'mesas');
+    }
+
+    function iniciarPedidos() {
+      try {
+        if (typeof audioLiberado !== "undefined") {
+          audioLiberado = true;
+        }
+
+        if (typeof tocarBeepSilencioso === "function") {
+          tocarBeepSilencioso();
+        }
+
+        if (typeof carregarPedidos === "function") {
+          carregarPedidos(false);
+        }
+
+        if (typeof iniciarAutoRefresh === "function") {
+          iniciarAutoRefresh();
+        }
+      } catch (erro) {
+        console.error("Erro ao iniciar painel de pedidos:", erro);
+      }
+    }
+
+    document.getElementById('senhaInput').addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        validarSenha();
+      }
+    });
+  </script>
+
+</body>
+</html>

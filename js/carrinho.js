@@ -4,6 +4,8 @@
    CARRINHO.JS — cardápio, modal produto e carrinho
 ══════════════════════════════════════════════ */
 
+let sugestaoBebidaExibida = false;
+
 /* ════════════════════════
    CARDÁPIO
 ════════════════════════ */
@@ -47,8 +49,12 @@ function criarCard(prod) {
   if (prod.tamanhos.length > 1) {
     precosHtml = `
       <div class="prod-prices">
-        <div class="price-line"><span>30 cm</span><span>R$ ${fmtPreco(prod.tamanhos[0].preco)}</span></div>
-        <div class="price-line"><span>35 cm</span><span>R$ ${fmtPreco(prod.tamanhos[1].preco)}</span></div>
+        ${prod.tamanhos.map(tam => `
+          <div class="price-line">
+            <span>${tam.label}</span>
+            <span>R$ ${fmtPreco(tam.preco)}</span>
+          </div>
+        `).join('')}
       </div>
     `;
   } else {
@@ -67,7 +73,11 @@ function criarCard(prod) {
     </div>
     <div class="prod-card-bot">
       ${imgHtml}
-      <button class="btn-add" title="Adicionar">+</button>
+      <button class="btn-add" type="button" title="Adicionar" aria-label="Adicionar item">
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="5" stroke-linecap="round"></path>
+  </svg>
+</button>
     </div>
   `;
 
@@ -106,6 +116,97 @@ function bindCategoryFilter() {
     pill.classList.add('active');
     renderCardapio(pill.dataset.cat);
   });
+}
+
+/* ════════════════════════
+   SUGESTÃO DE BEBIDA
+════════════════════════ */
+
+function produtoEhPizza(prod) {
+  return prod && (prod.cat === 'salgadas' || prod.cat === 'doces');
+}
+
+function carrinhoTemBebida() {
+  return carrinho.some(item => {
+    const prod = CARDAPIO.find(p => p.id === item.prodId);
+    return prod && prod.cat === 'bebidas';
+  });
+}
+
+function sugerirBebidaAposPizza() {
+  if (sugestaoBebidaExibida) return;
+  if (carrinhoTemBebida()) return;
+
+  sugestaoBebidaExibida = true;
+
+  setTimeout(() => {
+    abrirModalSugestaoBebida();
+  }, 350);
+}
+
+function abrirModalSugestaoBebida() {
+  let modal = document.getElementById('modalSugestaoBebida');
+
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modalSugestaoBebida';
+
+    modal.innerHTML = `
+      <div class="sugestao-bebida-box">
+        <button class="sugestao-bebida-fechar" onclick="fecharModalSugestaoBebida()">×</button>
+
+        <div class="sugestao-bebida-icone">🥤</div>
+
+        <h3>Que tal uma bebida?</h3>
+
+        <p>Complete seu pedido com uma bebida gelada 🍕🥤</p>
+
+        <div class="sugestao-bebida-actions">
+          <button class="btn-sugestao-principal" onclick="irParaBebidasDaSugestao()">
+            ESCOLHER BEBIDA
+          </button>
+
+          <button class="btn-sugestao-secundario" onclick="fecharModalSugestaoBebida()">
+            Agora não
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+  }
+
+  modal.classList.add('open');
+}
+
+function fecharModalSugestaoBebida() {
+  const modal = document.getElementById('modalSugestaoBebida');
+  if (modal) modal.classList.remove('open');
+}
+
+function irParaBebidasDaSugestao() {
+  fecharModalSugestaoBebida();
+  abrirCategoriaBebidas();
+}
+
+function abrirCategoriaBebidas() {
+  if (typeof goView === 'function') {
+    goView('cardapio');
+  }
+
+  document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+
+  const pillBebidas = document.querySelector('.cat-pill[data-cat="bebidas"]');
+  if (pillBebidas) pillBebidas.classList.add('active');
+
+  renderCardapio('bebidas');
+
+  setTimeout(() => {
+    const catalog = document.getElementById('catalog');
+    if (catalog) {
+      catalog.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 150);
 }
 
 /* ════════════════════════
@@ -152,7 +253,7 @@ function renderModalProduto() {
     `;
   }
 
-  html += `<div class="ms-half-title">Escolha o tamanho</div>`;
+  html += `<div class="ms-half-title">Escolha a opção</div>`;
   html += `<div class="ms-sizes">`;
 
   modalProduto.tamanhos.forEach((tam, idx) => {
@@ -251,7 +352,7 @@ function selecionarMetade(num, id) {
 
 function confirmarAdicao() {
   if (!modalProduto || modalTamanhoIdx === null) {
-    alerta('Escolha o tamanho.');
+    alerta('Escolha a opção.');
     return;
   }
 
@@ -260,6 +361,7 @@ function confirmarAdicao() {
     return;
   }
 
+  const adicionouPizza = produtoEhPizza(modalProduto);
   const tam    = modalProduto.tamanhos[modalTamanhoIdx];
   const chave  = `inteira_${modalProduto.id}_${modalTamanhoIdx}`;
   const existe = carrinho.find(c => c.chave === chave);
@@ -281,6 +383,10 @@ function confirmarAdicao() {
   fecharOverlay('overlaySize');
   atualizarCarrinhoUI();
   flashCartBar();
+
+  if (adicionouPizza) {
+    sugerirBebidaAposPizza();
+  }
 }
 
 function adicionarMeioAMeio() {
@@ -323,6 +429,7 @@ function adicionarMeioAMeio() {
   fecharOverlay('overlaySize');
   atualizarCarrinhoUI();
   flashCartBar();
+  sugerirBebidaAposPizza();
 }
 
 function fecharSizeModal() {
@@ -399,29 +506,44 @@ function flashCartBar() {
 function animarCarrinho() {
   const bar = document.getElementById('cartFloat');
   if (!bar) return;
+
   bar.classList.remove('pulse');
   void bar.offsetWidth;
   bar.classList.add('pulse');
+
   setTimeout(() => bar.classList.remove('pulse'), 600);
 }
 
 function mostrarToastAdd() {
   let toast = document.getElementById('_toastAdd');
+
   if (!toast) {
     toast = document.createElement('div');
     toast.id = '_toastAdd';
     toast.style.cssText = [
-      'position:fixed', 'bottom:90px', 'left:50%', 'transform:translateX(-50%)',
-      'background:#222', 'color:#fff', 'padding:8px 18px', 'border-radius:20px',
-      'font-size:13px', 'z-index:9999', 'pointer-events:none',
-      'opacity:0', 'transition:opacity .25s'
+      'position:fixed',
+      'bottom:90px',
+      'left:50%',
+      'transform:translateX(-50%)',
+      'background:#222',
+      'color:#fff',
+      'padding:8px 18px',
+      'border-radius:20px',
+      'font-size:13px',
+      'z-index:9999',
+      'pointer-events:none',
+      'opacity:0',
+      'transition:opacity .25s'
     ].join(';');
+
     document.body.appendChild(toast);
   }
 
   toast.textContent = '✓ Item adicionado ao carrinho';
   toast.style.opacity = '1';
+
   clearTimeout(toast._timer);
+
   toast._timer = setTimeout(() => {
     toast.style.opacity = '0';
   }, 1800);
@@ -435,6 +557,7 @@ function mudarQtd(chave, delta) {
 
   if (item.qtd <= 0) {
     carrinho = carrinho.filter(c => c.chave !== chave);
+
     if (carrinho.length === 0) fecharCarrinho();
   }
 
@@ -443,7 +566,9 @@ function mudarQtd(chave, delta) {
 
 function removerItem(chave) {
   carrinho = carrinho.filter(c => c.chave !== chave);
+
   if (carrinho.length === 0) fecharCarrinho();
+
   atualizarCarrinhoUI();
 }
 
