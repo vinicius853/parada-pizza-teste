@@ -2,11 +2,12 @@
 
 /* ══════════════════════════════════════════════
    ADMIN.JS — Parada da Pizza
-   Painel profissional com Supabase + realtime + som forte + indicadores
+   Painel profissional com Supabase + realtime + som forte + indicadores + impressão automática no .exe
 ══════════════════════════════════════════════ */
 
 const ADMIN_PWD = 'marcelo2026';
 const AUTO_REFRESH_MS = 15000;
+const AUTO_PRINT_KEY = 'paradaPizzaPedidosAutoImpressosV1';
 
 let pedidosCarregados = [];
 let filtroPedidosAtual = 'todos';
@@ -83,6 +84,7 @@ function fmtPreco(v) {
 
 function fmtData(iso) {
   if (!iso) return '—';
+
   try {
     return new Date(iso).toLocaleString('pt-BR');
   } catch {
@@ -130,8 +132,15 @@ function abrirWhatsAppCliente(pedido, mensagem) {
     return;
   }
 
-  const url = `https://wa.me/${telefoneFinal}?text=${encodeURIComponent(mensagem)}`;
-  window.open(url, '_blank');
+  const webUrl = `https://wa.me/${telefoneFinal}?text=${encodeURIComponent(mensagem)}`;
+  const appUrl = `whatsapp://send?phone=${telefoneFinal}&text=${encodeURIComponent(mensagem)}`;
+
+  if (window.electronAPI && typeof window.electronAPI.abrirWhatsApp === 'function') {
+    window.electronAPI.abrirWhatsApp(appUrl);
+    return;
+  }
+
+  window.open(webUrl, '_blank');
 }
 
 /* SOM FORTE */
@@ -395,6 +404,10 @@ async function carregarPedidos(silencioso = false) {
 
     if (pedidosNovos.length > 0) {
       dispararAlertaNovoPedido();
+
+      pedidosNovos.forEach(pedido => {
+        imprimirPedidoAutomatico(pedido);
+      });
 
       setTimeout(() => {
         pedidosNovos.forEach(p => destacarPedidoNovo(p.id));
@@ -783,16 +796,7 @@ function montarItensImpressao(pedido) {
   }).join('');
 }
 
-function imprimirPedido(id) {
-  const p = pedidosCarregados.find(o => o.id === id);
-  if (!p) return;
-
-  const printArea = document.getElementById('printArea');
-  if (!printArea) {
-    alert('Área de impressão não encontrada.');
-    return;
-  }
-
+function montarHtmlPedidoImpressao(p) {
   const enderecoHtml = p.endereco
     ? `
       <hr class="prt-sep"/>
@@ -804,66 +808,171 @@ function imprimirPedido(id) {
     `
     : '';
 
-  printArea.innerHTML = `
-    <div class="prt-logo">PARADA DA PIZZA</div>
-    <hr class="prt-sep"/>
+  return `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          width: 280px;
+          margin: 0;
+          padding: 10px;
+          font-size: 13px;
+          color: #000;
+        }
 
-    <div class="prt-row">
-      <span><strong>PEDIDO ONLINE</strong></span>
-      <span class="r">${getTipoPedidoLabel(p)}</span>
-    </div>
+        .prt-logo {
+          text-align: center;
+          font-size: 18px;
+          font-weight: 900;
+          margin-bottom: 6px;
+        }
 
-    <div class="prt-row">
-      <span><strong>Pedido:</strong></span>
-      <span class="r">#${getNumeroPedido(p)}</span>
-    </div>
+        .prt-sep {
+          border: none;
+          border-top: 1px dashed #000;
+          margin: 8px 0;
+        }
 
-    <div class="prt-row">
-      <span><strong>Data:</strong></span>
-      <span class="r">${fmtData(p.data_criacao)}</span>
-    </div>
+        .prt-row {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          margin: 4px 0;
+        }
 
-    <hr class="prt-sep"/>
+        .r {
+          text-align: right;
+          white-space: nowrap;
+        }
 
-    <div><strong>Cliente:</strong> ${p.nome || 'Não informado'}</div>
-    ${p.telefone ? `<div><strong>Telefone:</strong> ${p.telefone}</div>` : ''}
+        .prt-section-title {
+          font-weight: 900;
+          margin-bottom: 4px;
+        }
 
-    ${enderecoHtml}
+        .prt-total {
+          font-size: 16px;
+          font-weight: 900;
+        }
 
-    <hr class="prt-sep"/>
-    <div class="prt-section-title">Itens:</div>
+        .prt-rodape {
+          text-align: center;
+          margin-top: 10px;
+          font-size: 12px;
+        }
 
-    ${montarItensImpressao(p)}
+        small {
+          display: block;
+          font-size: 11px;
+          margin-top: 2px;
+        }
+      </style>
+    </head>
 
-    <hr class="prt-sep"/>
+    <body>
+      <div class="prt-logo">PARADA DA PIZZA</div>
 
-    <div class="prt-row">
-      <span>Subtotal:</span>
-      <span class="r">R$ ${fmtPreco(p.subtotal || p.total)}</span>
-    </div>
+      <hr class="prt-sep"/>
 
-    ${Number(p.taxa_entrega || 0) > 0 ? `
       <div class="prt-row">
-        <span>Entrega:</span>
-        <span class="r">R$ ${fmtPreco(p.taxa_entrega)}</span>
+        <span><strong>PEDIDO ONLINE</strong></span>
+        <span class="r">${getTipoPedidoLabel(p)}</span>
       </div>
-    ` : ''}
 
-    <div class="prt-total prt-row">
-      <span>TOTAL:</span>
-      <span class="r">R$ ${fmtPreco(p.total)}</span>
-    </div>
+      <div class="prt-row">
+        <span><strong>Pedido:</strong></span>
+        <span class="r">#${getNumeroPedido(p)}</span>
+      </div>
 
-    <hr class="prt-sep"/>
+      <div class="prt-row">
+        <span><strong>Data:</strong></span>
+        <span class="r">${fmtData(p.data_criacao)}</span>
+      </div>
 
-    <div><strong>Pagamento:</strong> ${p.pagamento || 'Não informado'}</div>
+      <hr class="prt-sep"/>
 
-    <div class="prt-rodape">
-      ---- Obrigado pela preferência! ----<br/>
-      Parada da Pizza
-    </div>
+      <div><strong>Cliente:</strong> ${p.nome || 'Não informado'}</div>
+      ${p.telefone ? `<div><strong>Telefone:</strong> ${p.telefone}</div>` : ''}
+
+      ${enderecoHtml}
+
+      <hr class="prt-sep"/>
+      <div class="prt-section-title">Itens:</div>
+
+      ${montarItensImpressao(p)}
+
+      <hr class="prt-sep"/>
+
+      <div class="prt-row">
+        <span>Subtotal:</span>
+        <span class="r">R$ ${fmtPreco(p.subtotal || p.total)}</span>
+      </div>
+
+      ${Number(p.taxa_entrega || 0) > 0 ? `
+        <div class="prt-row">
+          <span>Entrega:</span>
+          <span class="r">R$ ${fmtPreco(p.taxa_entrega)}</span>
+        </div>
+      ` : ''}
+
+      <div class="prt-total prt-row">
+        <span>TOTAL:</span>
+        <span class="r">R$ ${fmtPreco(p.total)}</span>
+      </div>
+
+      <hr class="prt-sep"/>
+
+      <div><strong>Pagamento:</strong> ${p.pagamento || 'Não informado'}</div>
+
+      <div class="prt-rodape">
+        ---- Impresso automaticamente ----<br/>
+        Parada da Pizza
+      </div>
+    </body>
+    </html>
   `;
+}
 
+function imprimirPedidoAutomatico(pedido) {
+  if (!window.electronAPI || typeof window.electronAPI.imprimir !== 'function') {
+    return;
+  }
+
+  const impressos = JSON.parse(localStorage.getItem(AUTO_PRINT_KEY) || '[]');
+
+  if (impressos.includes(pedido.id)) {
+    return;
+  }
+
+  const html = montarHtmlPedidoImpressao(pedido);
+
+  window.electronAPI.imprimir(html);
+
+  impressos.push(pedido.id);
+  localStorage.setItem(AUTO_PRINT_KEY, JSON.stringify(impressos));
+}
+
+function imprimirPedido(id) {
+  const p = pedidosCarregados.find(o => o.id === id);
+  if (!p) return;
+
+  const html = montarHtmlPedidoImpressao(p);
+
+  if (window.electronAPI && typeof window.electronAPI.imprimir === 'function') {
+    window.electronAPI.imprimir(html);
+    return;
+  }
+
+  const printArea = document.getElementById('printArea');
+  if (!printArea) {
+    alert('Área de impressão não encontrada.');
+    return;
+  }
+
+  printArea.innerHTML = html;
   window.print();
 }
 
@@ -909,6 +1018,7 @@ window.iniciarAutoRefresh = iniciarAutoRefresh;
 window.escutarPedidosTempoReal = escutarPedidosTempoReal;
 window.filtrarPedidos = filtrarPedidos;
 window.imprimirPedido = imprimirPedido;
+window.imprimirPedidoAutomatico = imprimirPedidoAutomatico;
 window.removerPedido = removerPedido;
 window.confirmarPedido = confirmarPedido;
 window.pedidoSaiuEntrega = pedidoSaiuEntrega;
