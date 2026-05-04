@@ -1,14 +1,14 @@
 'use strict';
 
-/* ══════════════════════════════════════════════
-   SUPABASE-CONFIG.JS — configuração do cliente Supabase
-   Substitua SUPABASE_URL e SUPABASE_ANON_KEY pelos
-   valores do seu projeto em supabase.com
-══════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://yraotjbgoecyokrlcjvj.supabase.co';
 
-'use strict';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlyYW90amJnb2VjeW9rcmxjanZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3NTkwMTAsImV4cCI6MjA5MzMzNTAxMH0._buTXfXtDyzKbZoeD_BqGqK485_ubOtTj7e0sBwqhTY';
 
-const SUPABASE_URL = '';
-const SUPABASE_ANON_KEY = '';
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+window.supabaseClient = supabaseClient;
+
+console.log('✅ Supabase conectado');

@@ -514,32 +514,36 @@ async function finalizarPedido() {
   }
 
   try {
-    const { error } = await supabaseClient
-      .from('pedidos')
-      .insert([{
-        numero_pedido : numeroPedido,
-        data_criacao  : new Date().toISOString(),
-        nome,
-        telefone      : tel,
-        tipo,
-        endereco      : pedido.endereco,
-        itens         : pedido.itens,
-        subtotal      : sub,
-        taxa_entrega  : entrega,
-        total,
-        pagamento     : pagLabels[pag],
-        troco         : troco,
-        status        : 'novo',
-        impresso      : false
-      }]);
+    if (typeof salvarPedidoSupabase !== 'function') {
+      throw new Error('Arquivo pedido.js não foi carregado.');
+    }
 
-    if (error) throw error;
+    await salvarPedidoSupabase(montarPedidoCliente({
+      numero_pedido : numeroPedido,
+      data_criacao  : new Date().toISOString(),
+      nome,
+      telefone      : tel,
+      tipo,
+      endereco      : pedido.endereco,
+      itens         : pedido.itens,
+      subtotal      : sub,
+      taxa_entrega  : entrega,
+      total,
+      pagamento     : pagLabels[pag],
+      troco         : troco,
+      status        : 'novo',
+      impresso      : false
+    }));
 
   } catch (err) {
     console.error('Erro ao salvar pedido no Supabase:', err);
 
-    numeroPedido -= 1;
-    localStorage.setItem('pdp_counter', String(numeroPedido));
+    if (typeof voltarNumeroPedido === 'function') {
+      voltarNumeroPedido(numeroPedido);
+    } else {
+      numeroPedido -= 1;
+      localStorage.setItem('pdp_counter', String(numeroPedido));
+    }
 
     if (btnWa) {
       btnWa.disabled = false;

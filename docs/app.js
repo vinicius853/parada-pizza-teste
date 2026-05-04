@@ -32,7 +32,7 @@ function getRadio(name) {
 
 function setMsg(el, txt, tipo) {
   el.textContent = txt;
-  el.className = 'fmsg' + (tipo ? ' ' + tipo : '');
+  el.className   = 'fmsg' + (tipo ? ' ' + tipo : '');
 }
 
 function setText(id, value) {
@@ -56,76 +56,6 @@ function fecharOverlay(id) {
   if (!el) return;
   el.classList.remove('open');
   document.body.style.overflow = '';
-}
-
-/* ════════════════════════
-   PRODUTOS DINÂMICOS — SUPABASE
-════════════════════════ */
-
-function mapearCategoriaSupabase(categoria) {
-  const cat = normalizar(categoria || '');
-
-  if (cat.includes('bebida')) return 'bebidas';
-  if (cat.includes('doce')) return 'doces';
-  if (cat.includes('esfiha')) return 'esfihas';
-  if (cat.includes('adicional')) return 'adicionais';
-
-  return 'salgadas';
-}
-
-function converterProdutoSupabase(produto) {
-  return {
-    id: produto.id,
-    cat: mapearCategoriaSupabase(produto.categoria),
-    nome: produto.nome,
-    desc: produto.descricao || '',
-    img: produto.img || '',
-    aceitaMeio: false,
-    tamanhos: [
-      {
-        label: 'Unidade',
-        preco: Number(produto.preco || 0)
-      }
-    ]
-  };
-}
-
-async function carregarProdutosSupabase() {
-  if (typeof supabaseClient === 'undefined') {
-    console.warn('Supabase não encontrado. Usando dados.js.');
-    return null;
-  }
-
-  const { data, error } = await supabaseClient
-    .from('produtos')
-    .select('*')
-    .eq('ativo', true)
-    .order('nome', { ascending: true });
-
-  if (error) {
-    console.error('Erro ao carregar produtos do Supabase:', error);
-    return null;
-  }
-
-  if (!data || data.length === 0) {
-    console.warn('Tabela produtos vazia. Usando dados.js.');
-    return null;
-  }
-
-  return data.map(converterProdutoSupabase);
-}
-
-async function carregarCardapioDinamico() {
-  const produtosBanco = await carregarProdutosSupabase();
-
-  if (!produtosBanco) {
-    return;
-  }
-
-  if (Array.isArray(CARDAPIO)) {
-    CARDAPIO.length = 0;
-    produtosBanco.forEach(produto => CARDAPIO.push(produto));
-  }
 }
 
 /* ════════════════════════
@@ -197,7 +127,7 @@ function renderPainel() {
     const card = document.createElement('div');
     card.className = 'pedido-card';
 
-    const itensHtml = p.itens
+    const itensHtml  = p.itens
       .map(i => `${i.qtd}x ${i.nome} (${i.tamanho}) — R$ ${fmtPreco(i.preco * i.qtd)}`)
       .join('\n');
 
@@ -366,9 +296,7 @@ function bindAdminSecretAccess() {
    INICIALIZAÇÃO
 ════════════════════════ */
 
-(async function init() {
-  await carregarCardapioDinamico();
-
+(function init() {
   renderCardapio();
   atualizarCarrinhoUI();
   bindCategoryFilter();

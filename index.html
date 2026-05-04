@@ -4,16 +4,15 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Parada da Pizza — Pedidos Online</title>
-	<link rel="stylesheet" href="css/base.css"/>
-	<link rel="stylesheet" href="css/index.css"/>
-	<link rel="stylesheet" href="css/print.css"/>
-  
-  
-  
-  
+
+  <link rel="stylesheet" href="css/base.css"/>
+  <link rel="stylesheet" href="css/index.css"/>
+  <link rel="stylesheet" href="css/print.css"/>
+
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 </head>
+
 <body>
 
 <header class="site-header" id="siteHeader">
@@ -285,13 +284,22 @@
 
 <div id="printArea" class="print-only"></div>
 
+<!-- 1. SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- 2. CONFIG SUPABASE -->
 <script src="js/supabase-config.js"></script>
 
+<!-- 3. DADOS BASE -->
 <script src="js/dados.js"></script>
+
+<!-- 4. CAMADA CENTRAL DE PEDIDO — OBRIGATÓRIO ANTES DO CHECKOUT -->
+<script src="js/pedido.js"></script>
+
+<!-- 5. SISTEMA DA PÁGINA CLIENTE -->
+<script src="js/app.js"></script>
 <script src="js/carrinho.js"></script>
 <script src="js/checkout.js"></script>
-<script src="js/app.js"></script>
 
 </body>
 </html>

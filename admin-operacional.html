@@ -16,12 +16,16 @@
 
   <div id="loginScreen" class="login-screen">
     <div class="login-box">
-      <div class="login-icon">🔒</div>
+      <div class="login-icon">🔐</div>
       <h2>ACESSO RESTRITO</h2>
-      <p>Digite a senha para acessar o painel</p>
+      <p>Entre com seu usuário</p>
 
+      <input type="email" id="emailInput" placeholder="E-mail">
       <input type="password" id="senhaInput" placeholder="Senha">
-      <button onclick="validarSenha()">Entrar</button>
+
+      <button onclick="login()">Entrar</button>
+
+      <small id="erroLogin" style="color:red; display:block; margin-top:8px;"></small>
     </div>
   </div>
 
@@ -41,6 +45,10 @@
         <button onclick="trocarTela('mesas')" id="tabMesas">
           🍽 Mesas
         </button>
+
+        <button onclick="logout()" id="btnLogout">
+          🚪 Sair
+        </button>
       </div>
     </header>
 
@@ -50,11 +58,11 @@
         <div class="painel-topbar">
           <h2>📋 Pedidos</h2>
 
-          <button class="btn-atualizar" id="btnAtualizar" onclick="carregarPedidos()">
+          <button class="btn-atualizar" onclick="carregarPedidos()">
             🔄 Atualizar
           </button>
 
-          <button class="btn-atualizar btn-fullscreen" id="btnTelaCheia" onclick="ativarTelaCheia()">
+          <button class="btn-atualizar btn-fullscreen" onclick="ativarTelaCheia()">
             📺 Tela Cheia
           </button>
 
@@ -62,17 +70,11 @@
         </div>
 
         <div class="filtros">
-          <button class="filtro-btn active" data-filtro="todos" onclick="filtrarPedidos('todos')">
-            Todos
-          </button>
-
-          <button class="filtro-btn" data-filtro="novo" onclick="filtrarPedidos('novo')">
-            🆕 Novos
-          </button>
-
-          <button class="filtro-btn" data-filtro="impresso" onclick="filtrarPedidos('impresso')">
-            ✅ Impressos
-          </button>
+          <button class="filtro-btn active" data-filtro="todos" onclick="filtrarPedidos('todos')">Todos</button>
+          <button class="filtro-btn" data-filtro="novo" onclick="filtrarPedidos('novo')">🆕 Novos</button>
+          <button class="filtro-btn" data-filtro="confirmado" onclick="filtrarPedidos('confirmado')">🍕 Em preparo</button>
+          <button class="filtro-btn" data-filtro="saiu_entrega" onclick="filtrarPedidos('saiu_entrega')">🛵 Saiu entrega</button>
+          <button class="filtro-btn" data-filtro="concluido" onclick="filtrarPedidos('concluido')">✅ Concluídos</button>
         </div>
 
         <div class="painel-list" id="painelList">
@@ -127,34 +129,22 @@
   <div id="printArea"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
 
   <script src="js/dados.js"></script>
-  <script src="js/supabase-config.js"></script>
+  <script src="js/pedido.js"></script>
+
   <script src="js/admin.js"></script>
 
   <script src="js/mesas-ui.js"></script>
   <script src="js/mesas-produtos.js"></script>
   <script src="js/mesas-impressao.js"></script>
+  <script src="js/pedido-aberto.js"></script>
   <script src="js/mesas.js"></script>
 
+  <script src="js/auth.js"></script>
+
   <script>
-    function validarSenha() {
-      const input = document.getElementById('senhaInput');
-      const senha = input.value.trim();
-
-      if (senha === "marcelo2026") {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('appOperacional').style.display = 'block';
-
-        iniciarPedidos();
-        return;
-      }
-
-      alert("Senha incorreta");
-      input.value = "";
-      input.focus();
-    }
-
     function trocarTela(tela) {
       document.getElementById('telaPedidos').style.display = tela === 'pedidos' ? 'block' : 'none';
       document.getElementById('telaMesas').style.display = tela === 'mesas' ? 'block' : 'none';
@@ -164,32 +154,10 @@
     }
 
     function iniciarPedidos() {
-      try {
-        if (typeof audioLiberado !== "undefined") {
-          audioLiberado = true;
-        }
-
-        if (typeof tocarBeepSilencioso === "function") {
-          tocarBeepSilencioso();
-        }
-
-        if (typeof carregarPedidos === "function") {
-          carregarPedidos(false);
-        }
-
-        if (typeof iniciarAutoRefresh === "function") {
-          iniciarAutoRefresh();
-        }
-      } catch (erro) {
-        console.error("Erro ao iniciar painel de pedidos:", erro);
-      }
+      if (typeof carregarPedidos === "function") carregarPedidos(false);
+      if (typeof iniciarAutoRefresh === "function") iniciarAutoRefresh();
+      if (typeof escutarPedidosTempoReal === "function") escutarPedidosTempoReal();
     }
-
-    document.getElementById('senhaInput').addEventListener('keydown', function(event) {
-      if (event.key === 'Enter') {
-        validarSenha();
-      }
-    });
   </script>
 
 </body>
