@@ -966,14 +966,24 @@ function imprimirPedido(id) {
     return;
   }
 
-  const printArea = document.getElementById('printArea');
-  if (!printArea) {
-    alert('Área de impressão não encontrada.');
+  const janelaImpressao = window.open('', '_blank', 'width=420,height=700');
+
+  if (!janelaImpressao) {
+    alert('Não foi possível abrir a janela de impressão. Verifique se o navegador bloqueou pop-ups.');
     return;
   }
 
-  printArea.innerHTML = html;
-  window.print();
+  janelaImpressao.document.open();
+  janelaImpressao.document.write(html);
+  janelaImpressao.document.close();
+
+  janelaImpressao.onload = () => {
+    janelaImpressao.focus();
+
+    setTimeout(() => {
+      janelaImpressao.print();
+    }, 300);
+  };
 }
 
 /* TELA CHEIA */
