@@ -4,6 +4,11 @@ function estiloImpressaoTermica() {
       box-sizing: border-box;
     }
 
+    @page {
+      size: 80mm auto;
+      margin: 0;
+    }
+
     html, body {
       margin: 0;
       padding: 0;
@@ -13,11 +18,11 @@ function estiloImpressaoTermica() {
 
     body {
       font-family: "Courier New", monospace;
-      width: 80mm;
-      max-width: 80mm;
+      width: 72mm;
+      max-width: 72mm;
       padding: 4mm;
       font-size: 12px;
-      line-height: 1.25;
+      line-height: 1.3;
     }
 
     h2, h3, p {
@@ -27,63 +32,62 @@ function estiloImpressaoTermica() {
     }
 
     h2 {
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 900;
       text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
     h3 {
       font-size: 13px;
-      font-weight: 800;
+      font-weight: 900;
       text-transform: uppercase;
     }
 
     .aviso {
       text-align: center;
       font-weight: 900;
-      font-size: 16px;
-      margin: 6px 0;
+      font-size: 18px;
+      margin: 7px 0;
     }
 
     .linha {
       border-top: 1px dashed #000;
-      margin: 7px 0;
+      margin: 8px 0;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    .item {
+      padding: 6px 0;
+      border-bottom: 1px dashed #000;
     }
 
-    td {
-      padding: 4px 0;
-      vertical-align: top;
-      border-bottom: 1px dashed #ccc;
-      font-size: 12px;
-    }
-
-    td:last-child {
-      text-align: right;
-      white-space: nowrap;
-      padding-left: 6px;
-    }
-
-    strong {
+    .item-nome {
+      font-size: 13px;
       font-weight: 900;
+      word-break: break-word;
     }
 
-    small {
+    .item-info {
       display: block;
       margin-top: 2px;
       font-size: 11px;
-      color: #000;
+      word-break: break-word;
+    }
+
+    .item-total {
+      margin-top: 3px;
+      text-align: right;
+      font-size: 13px;
+      font-weight: 900;
     }
 
     .total {
       margin-top: 8px;
-      text-align: center;
-      font-size: 17px;
+      text-align: right;
+      font-size: 18px;
       font-weight: 900;
+      border-top: 2px solid #000;
+      padding-top: 6px;
     }
 
     .pagamento {
@@ -98,126 +102,121 @@ function estiloImpressaoTermica() {
       text-align: center;
       font-size: 11px;
     }
-
-    @page {
-      size: 80mm auto;
-      margin: 0;
-    }
-
-    @media print {
-      html, body {
-        width: 80mm;
-        max-width: 80mm;
-        margin: 0;
-        padding: 0;
-      }
-
-      body {
-        padding: 4mm;
-      }
-    }
   `;
 }
 
-function imprimirComandaCozinha(numeroMesa) {
-  const mesa = mesas.find(m => m.numero === numeroMesa);
+function limparTextoTermico(texto) {
+  return String(texto || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x20-\x7EÀ-ÿ]/g, "")
+    .trim();
+}
 
-  if (!mesa || mesa.itens.length === 0) {
-    alert("Não há itens para imprimir.");
+function imprimirHtmlTermico(html) {
+  if (window.electronAPI && typeof window.electronAPI.imprimir === "function") {
+    window.electronAPI.imprimir(html);
     return;
   }
 
-  const itensHtml = mesa.itens.map(item => `
-    <tr>
-      <td>
-        <strong>${item.quantidade}x ${item.nome}</strong>
-        ${item.observacao ? `<br><small>${item.observacao}</small>` : ""}
-      </td>
-    </tr>
-  `).join("");
-
   const janela = window.open("", "_blank", "width=420,height=700");
 
-  janela.document.write(`
-    <html>
+  if (!janela) {
+    alert("Não foi possível abrir a janela de impressão. Verifique o bloqueador de pop-ups.");
+    return;
+  }
+
+  janela.document.open();
+  janela.document.write(html);
+  janela.document.close();
+
+  janela.onload = function () {
+    janela.focus();
+
+    setTimeout(() => {
+      janela.print();
+    }, 300);
+  };
+}
+
+function montarHtmlComandaCozinha(mesa) {
+  const itensHtml = mesa.itens.map(item => `
+    <div class="item">
+      <div class="item-nome">${Number(item.quantidade || 1)}x ${limparTextoTermico(item.nome)}</div>
+      ${item.tamanho ? `<span class="item-info">${limparTextoTermico(item.tamanho)}</span>` : ""}
+      ${item.observacao ? `<span class="item-info">${limparTextoTermico(item.observacao)}</span>` : ""}
+    </div>
+  `).join("");
+
+  return `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
       <head>
+        <meta charset="UTF-8">
         <title>Comanda Cozinha - Mesa ${mesa.numero}</title>
-        <style>
-          ${estiloImpressaoTermica()}
-        </style>
+        <style>${estiloImpressaoTermica()}</style>
       </head>
 
       <body>
         <h2>PARADA DA PIZZA</h2>
         <h3>COMANDA COZINHA</h3>
+
         <div class="aviso">MESA ${mesa.numero}</div>
-        ${mesa.nome ? `<p>Cliente: ${mesa.nome}</p>` : ""}
+
+        ${mesa.nome ? `<p>Cliente: ${limparTextoTermico(mesa.nome)}</p>` : ""}
         <p>${new Date().toLocaleString("pt-BR")}</p>
 
         <div class="linha"></div>
 
-        <table>
-          ${itensHtml}
-        </table>
+        ${itensHtml}
 
         <div class="linha"></div>
 
-        <script>
-          window.onload = function() {
-            window.print();
-          };
-        <\/script>
+        <div class="rodape">
+          Enviar para preparo
+        </div>
       </body>
     </html>
-  `);
-
-  janela.document.close();
+  `;
 }
 
-function imprimirComandaCliente(numeroMesa) {
-  const mesa = mesas.find(m => m.numero === numeroMesa);
+function montarHtmlComandaCliente(mesa) {
   const total = calcularTotal(mesa);
 
-  if (!mesa || mesa.itens.length === 0) {
-    alert("Não há itens para imprimir.");
-    return;
-  }
+  const itensHtml = mesa.itens.map(item => {
+    const qtd = Number(item.quantidade || 1);
+    const subtotal = Number(item.preco || 0) * qtd;
 
-  const itensHtml = mesa.itens.map(item => `
-    <tr>
-      <td>
-        <strong>${item.quantidade}x ${item.nome}</strong>
-        ${item.observacao ? `<br><small>${item.observacao}</small>` : ""}
-      </td>
-      <td>${formatarMoeda(item.preco * item.quantidade)}</td>
-    </tr>
-  `).join("");
+    return `
+      <div class="item">
+        <div class="item-nome">${qtd}x ${limparTextoTermico(item.nome)}</div>
+        ${item.tamanho ? `<span class="item-info">${limparTextoTermico(item.tamanho)}</span>` : ""}
+        ${item.observacao ? `<span class="item-info">${limparTextoTermico(item.observacao)}</span>` : ""}
+        <div class="item-total">${formatarMoeda(subtotal)}</div>
+      </div>
+    `;
+  }).join("");
 
-  const janela = window.open("", "_blank", "width=420,height=700");
-
-  janela.document.write(`
-    <html>
+  return `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
       <head>
+        <meta charset="UTF-8">
         <title>Comanda Cliente - Mesa ${mesa.numero}</title>
-        <style>
-          ${estiloImpressaoTermica()}
-        </style>
+        <style>${estiloImpressaoTermica()}</style>
       </head>
 
       <body>
         <h2>PARADA DA PIZZA</h2>
         <h3>COMANDA CLIENTE</h3>
+
         <p>Mesa ${mesa.numero}</p>
-        ${mesa.nome ? `<p>Cliente: ${mesa.nome}</p>` : ""}
+        ${mesa.nome ? `<p>Cliente: ${limparTextoTermico(mesa.nome)}</p>` : ""}
         <p>${new Date().toLocaleString("pt-BR")}</p>
 
         <div class="linha"></div>
 
-        <table>
-          ${itensHtml}
-        </table>
-
-        <div class="linha"></div>
+        ${itensHtml}
 
         <div class="total">
           TOTAL: ${formatarMoeda(total)}
@@ -226,84 +225,101 @@ function imprimirComandaCliente(numeroMesa) {
         <div class="rodape">
           Obrigado pela preferência!
         </div>
-
-        <script>
-          window.onload = function() {
-            window.print();
-          };
-        <\/script>
       </body>
     </html>
-  `);
-
-  janela.document.close();
+  `;
 }
 
-function imprimirFechamentoMesa(mesa, formaPagamento) {
+function montarHtmlFechamentoMesa(mesa, formaPagamento) {
   const total = calcularTotal(mesa);
 
-  const itensHtml = mesa.itens.map(item => `
-    <tr>
-      <td>
-        <strong>${item.quantidade}x ${item.nome}</strong>
-        ${item.observacao ? `<br><small>${item.observacao}</small>` : ""}
-      </td>
-      <td>${formatarMoeda(item.preco * item.quantidade)}</td>
-    </tr>
-  `).join("");
+  const itensHtml = mesa.itens.map(item => {
+    const qtd = Number(item.quantidade || 1);
+    const subtotal = Number(item.preco || 0) * qtd;
 
-  const janela = window.open("", "_blank", "width=420,height=700");
+    return `
+      <div class="item">
+        <div class="item-nome">${qtd}x ${limparTextoTermico(item.nome)}</div>
+        ${item.tamanho ? `<span class="item-info">${limparTextoTermico(item.tamanho)}</span>` : ""}
+        ${item.observacao ? `<span class="item-info">${limparTextoTermico(item.observacao)}</span>` : ""}
+        <div class="item-total">${formatarMoeda(subtotal)}</div>
+      </div>
+    `;
+  }).join("");
 
-  janela.document.write(`
-    <html>
+  return `
+    <!DOCTYPE html>
+    <html lang="pt-BR">
       <head>
+        <meta charset="UTF-8">
         <title>Fechamento Mesa ${mesa.numero}</title>
-        <style>
-          ${estiloImpressaoTermica()}
-        </style>
+        <style>${estiloImpressaoTermica()}</style>
       </head>
 
       <body>
         <h2>PARADA DA PIZZA</h2>
-        <h3>FECHAMENTO - MESA ${mesa.numero}</h3>
-        ${mesa.nome ? `<p>Cliente: ${mesa.nome}</p>` : ""}
+        <h3>FECHAMENTO</h3>
+
+        <div class="aviso">MESA ${mesa.numero}</div>
+
+        ${mesa.nome ? `<p>Cliente: ${limparTextoTermico(mesa.nome)}</p>` : ""}
         <p>${new Date().toLocaleString("pt-BR")}</p>
 
         <div class="linha"></div>
 
-        <table>
-          ${itensHtml}
-        </table>
-
-        <div class="linha"></div>
+        ${itensHtml}
 
         <div class="total">
           TOTAL: ${formatarMoeda(total)}
         </div>
 
         <div class="pagamento">
-          Pagamento: ${formaPagamento}
+          Pagamento: ${limparTextoTermico(formaPagamento)}
         </div>
 
         <div class="rodape">
           Obrigado pela preferência!
         </div>
-
-        <script>
-          window.onload = function() {
-            window.print();
-          };
-        <\/script>
       </body>
     </html>
-  `);
-
-  janela.document.close();
+  `;
 }
 
+function imprimirComandaCozinha(numeroMesa) {
+  const mesa = mesas.find(m => Number(m.numero) === Number(numeroMesa));
+
+  if (!mesa || mesa.itens.length === 0) {
+    alert("Não há itens para imprimir.");
+    return;
+  }
+
+  imprimirHtmlTermico(montarHtmlComandaCozinha(mesa));
+}
+
+function imprimirComandaCliente(numeroMesa) {
+  const mesa = mesas.find(m => Number(m.numero) === Number(numeroMesa));
+
+  if (!mesa || mesa.itens.length === 0) {
+    alert("Não há itens para imprimir.");
+    return;
+  }
+
+  imprimirHtmlTermico(montarHtmlComandaCliente(mesa));
+}
+
+function imprimirFechamentoMesa(mesa, formaPagamento) {
+  if (!mesa || !Array.isArray(mesa.itens) || mesa.itens.length === 0) return;
+
+  imprimirHtmlTermico(montarHtmlFechamentoMesa(mesa, formaPagamento));
+}
 
 /* EXPOSIÇÃO GLOBAL - NECESSÁRIA COM <script> SEM MÓDULOS */
 window.estiloImpressaoTermica = estiloImpressaoTermica;
+window.limparTextoTermico = limparTextoTermico;
+window.imprimirHtmlTermico = imprimirHtmlTermico;
+window.montarHtmlComandaCozinha = montarHtmlComandaCozinha;
+window.montarHtmlComandaCliente = montarHtmlComandaCliente;
+window.montarHtmlFechamentoMesa = montarHtmlFechamentoMesa;
 window.imprimirComandaCozinha = imprimirComandaCozinha;
 window.imprimirComandaCliente = imprimirComandaCliente;
 window.imprimirFechamentoMesa = imprimirFechamentoMesa;

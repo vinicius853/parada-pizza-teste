@@ -772,164 +772,204 @@ async function removerPedido(id) {
 
 /* IMPRESSÃO */
 
-function montarItensImpressao(pedido) {
-  const itens = Array.isArray(pedido.itens) ? pedido.itens : [];
-
-  if (!itens.length) return '<div>Nenhum item informado</div>';
-
-  return itens.map(item => {
-    const qtd = Number(item.qtd || item.quantidade || 1);
-    const preco = Number(item.preco || 0);
-    const tamanho = item.tamanho ? `<small>${item.tamanho}</small>` : '';
-    const obs = item.observacao ? `<small>${item.observacao}</small>` : '';
-
-    return `
-      <div class="prt-row">
-        <span>
-          <strong>${qtd}x ${item.nome}</strong>
-          ${tamanho}
-          ${obs}
-        </span>
-        <span class="r">R$ ${fmtPreco(preco * qtd)}</span>
-      </div>
-    `;
-  }).join('');
+function limparTextoImpressao(texto) {
+  return String(texto || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\x20-\x7EÀ-ÿ]/g, '')
+    .trim();
 }
 
 function montarHtmlPedidoImpressao(p) {
+  const tipoPedido = p.tipo === 'entrega' ? 'ENTREGA' : 'RETIRADA';
+
   const enderecoHtml = p.endereco
     ? `
-      <hr class="prt-sep"/>
-      <div class="prt-section-title">Endereço:</div>
-      <div>${p.endereco.rua || ''}, ${p.endereco.numero || ''}</div>
-      <div>${p.endereco.bairro || ''}</div>
-      <div>${p.endereco.cidade || ''} ${p.endereco.uf ? '-' + p.endereco.uf : ''}</div>
-      ${p.endereco.cep ? `<div>CEP: ${p.endereco.cep}</div>` : ''}
+      <div class="sep"></div>
+      <div class="titulo">ENDERECO</div>
+      <div>${limparTextoImpressao(p.endereco.rua)}, ${limparTextoImpressao(p.endereco.numero)}</div>
+      <div>${limparTextoImpressao(p.endereco.bairro)}</div>
+      <div>${limparTextoImpressao(p.endereco.cidade)}${p.endereco.uf ? ' - ' + limparTextoImpressao(p.endereco.uf) : ''}</div>
+      ${p.endereco.cep ? `<div>CEP: ${limparTextoImpressao(p.endereco.cep)}</div>` : ''}
     `
     : '';
+
+  const itens = Array.isArray(p.itens) ? p.itens : [];
+
+  const itensHtml = itens.length
+    ? itens.map(item => {
+        const qtd = Number(item.qtd || item.quantidade || 1);
+        const preco = Number(item.preco || 0);
+        const subtotal = qtd * preco;
+
+        return `
+          <div class="item">
+            <div class="item-nome">${qtd}x ${limparTextoImpressao(item.nome)}</div>
+            ${item.tamanho ? `<div class="item-info">${limparTextoImpressao(item.tamanho)}</div>` : ''}
+            ${item.observacao ? `<div class="item-info">${limparTextoImpressao(item.observacao)}</div>` : ''}
+            <div class="item-total">R$ ${fmtPreco(subtotal)}</div>
+          </div>
+        `;
+      }).join('')
+    : '<div>Nenhum item informado</div>';
 
   return `
     <!DOCTYPE html>
     <html lang="pt-BR">
     <head>
       <meta charset="UTF-8">
+
       <style>
-        body {
-          font-family: Arial, sans-serif;
-          width: 280px;
+        @page {
+          size: 80mm auto;
           margin: 0;
-          padding: 10px;
-          font-size: 13px;
-          color: #000;
         }
 
-        .prt-logo {
+        * {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 0;
+          padding: 4mm;
+          width: 72mm;
+          font-family: "Courier New", monospace;
+          font-size: 12px;
+          line-height: 1.35;
+          color: #000;
+          background: #fff;
+        }
+
+        .center {
           text-align: center;
-          font-size: 18px;
+        }
+
+        .logo {
+          text-align: center;
+          font-size: 17px;
           font-weight: 900;
+          letter-spacing: 1px;
+          margin-bottom: 3px;
+        }
+
+        .sublogo {
+          text-align: center;
+          font-size: 11px;
           margin-bottom: 6px;
         }
 
-        .prt-sep {
-          border: none;
+        .sep {
           border-top: 1px dashed #000;
           margin: 8px 0;
         }
 
-        .prt-row {
-          display: flex;
-          justify-content: space-between;
-          gap: 10px;
-          margin: 4px 0;
+        .linha {
+          margin: 3px 0;
+          word-break: break-word;
         }
 
-        .r {
-          text-align: right;
-          white-space: nowrap;
-        }
-
-        .prt-section-title {
+        .titulo {
           font-weight: 900;
-          margin-bottom: 4px;
+          margin-bottom: 5px;
+          text-transform: uppercase;
         }
 
-        .prt-total {
-          font-size: 16px;
-          font-weight: 900;
-        }
-
-        .prt-rodape {
+        .pedido-numero {
           text-align: center;
-          margin-top: 10px;
-          font-size: 12px;
+          font-size: 20px;
+          font-weight: 900;
+          margin: 6px 0;
         }
 
-        small {
-          display: block;
+        .item {
+          padding: 6px 0;
+          border-bottom: 1px dashed #000;
+        }
+
+        .item-nome {
+          font-weight: 900;
+          font-size: 13px;
+        }
+
+        .item-info {
           font-size: 11px;
           margin-top: 2px;
+        }
+
+        .item-total {
+          text-align: right;
+          font-weight: 900;
+          font-size: 13px;
+          margin-top: 3px;
+        }
+
+        .total-box {
+          margin-top: 8px;
+          padding-top: 6px;
+          border-top: 2px solid #000;
+        }
+
+        .total-label {
+          font-size: 13px;
+          font-weight: 900;
+        }
+
+        .total-valor {
+          text-align: right;
+          font-size: 19px;
+          font-weight: 900;
+        }
+
+        .rodape {
+          text-align: center;
+          margin-top: 10px;
+          font-size: 11px;
         }
       </style>
     </head>
 
     <body>
-      <div class="prt-logo">PARADA DA PIZZA</div>
+      <div class="logo">PARADA DA PIZZA</div>
+      <div class="sublogo">COMPROVANTE DE PEDIDO</div>
 
-      <hr class="prt-sep"/>
+      <div class="sep"></div>
 
-      <div class="prt-row">
-        <span><strong>PEDIDO ONLINE</strong></span>
-        <span class="r">${getTipoPedidoLabel(p)}</span>
-      </div>
+      <div class="center"><strong>PEDIDO ONLINE</strong></div>
+      <div class="pedido-numero">#${getNumeroPedido(p)}</div>
 
-      <div class="prt-row">
-        <span><strong>Pedido:</strong></span>
-        <span class="r">#${getNumeroPedido(p)}</span>
-      </div>
+      <div class="linha"><strong>Tipo:</strong> ${tipoPedido}</div>
+      <div class="linha"><strong>Data:</strong> ${fmtData(p.data_criacao)}</div>
 
-      <div class="prt-row">
-        <span><strong>Data:</strong></span>
-        <span class="r">${fmtData(p.data_criacao)}</span>
-      </div>
+      <div class="sep"></div>
 
-      <hr class="prt-sep"/>
-
-      <div><strong>Cliente:</strong> ${p.nome || 'Não informado'}</div>
-      ${p.telefone ? `<div><strong>Telefone:</strong> ${p.telefone}</div>` : ''}
+      <div class="linha"><strong>Cliente:</strong> ${limparTextoImpressao(p.nome || 'Nao informado')}</div>
+      ${p.telefone ? `<div class="linha"><strong>Telefone:</strong> ${limparTextoImpressao(p.telefone)}</div>` : ''}
 
       ${enderecoHtml}
 
-      <hr class="prt-sep"/>
-      <div class="prt-section-title">Itens:</div>
+      <div class="sep"></div>
 
-      ${montarItensImpressao(p)}
+      <div class="titulo">ITENS</div>
+      ${itensHtml}
 
-      <hr class="prt-sep"/>
-
-      <div class="prt-row">
-        <span>Subtotal:</span>
-        <span class="r">R$ ${fmtPreco(p.subtotal || p.total)}</span>
-      </div>
+      <div class="sep"></div>
 
       ${Number(p.taxa_entrega || 0) > 0 ? `
-        <div class="prt-row">
-          <span>Entrega:</span>
-          <span class="r">R$ ${fmtPreco(p.taxa_entrega)}</span>
-        </div>
+        <div class="linha"><strong>Taxa entrega:</strong> R$ ${fmtPreco(p.taxa_entrega)}</div>
       ` : ''}
 
-      <div class="prt-total prt-row">
-        <span>TOTAL:</span>
-        <span class="r">R$ ${fmtPreco(p.total)}</span>
+      <div class="total-box">
+        <div class="total-label">TOTAL</div>
+        <div class="total-valor">R$ ${fmtPreco(p.total)}</div>
       </div>
 
-      <hr class="prt-sep"/>
+      <div class="sep"></div>
 
-      <div><strong>Pagamento:</strong> ${p.pagamento || 'Não informado'}</div>
+      <div class="linha"><strong>Pagamento:</strong> ${limparTextoImpressao(p.pagamento || 'Nao informado')}</div>
 
-      <div class="prt-rodape">
-        ---- Impresso automaticamente ----<br/>
-        Parada da Pizza
+      <div class="rodape">
+        Impresso automaticamente<br>
+        Megas Tech
       </div>
     </body>
     </html>
