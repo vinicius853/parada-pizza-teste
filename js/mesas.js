@@ -7,6 +7,8 @@ let filtroMesasAtual = "todos";
 let buscaAtual = "";
 let mesaSelecionada = null;
 let realtimeMesasIniciado = false;
+let digitandoNomeCliente = false;
+let timerAtualizarNomeMesa = null;
 
 const containerMesas = document.getElementById("mesas");
 const painel = document.getElementById("painel");
@@ -36,6 +38,10 @@ function carregarMesas() {
 
 function salvarMesas() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(mesas));
+}
+
+function gerarIdItem(prefixo = "item") {
+  return `${prefixo}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function formatarMoeda(valor) {
@@ -103,7 +109,9 @@ async function carregarComandasAbertasDoBanco() {
       const mesa = encontrarMesa(comanda.mesa);
       if (!mesa) return;
 
-      mesa.nome = comanda.nome_cliente || "";
+      if (!(digitandoNomeCliente && Number(mesa.numero) === Number(mesaSelecionada))) {
+        mesa.nome = comanda.nome_cliente || "";
+      }
 
       const itens = Array.isArray(comanda.itens_pedido_aberto)
         ? comanda.itens_pedido_aberto
@@ -115,7 +123,7 @@ async function carregarComandasAbertasDoBanco() {
     salvarMesas();
     renderMesas();
 
-    if (mesaSelecionada) {
+    if (mesaSelecionada && !digitandoNomeCliente) {
       const mesaAtual = encontrarMesa(mesaSelecionada);
       if (mesaAtual) renderPainel(mesaAtual);
     }
@@ -140,7 +148,7 @@ async function adicionarItemNaComandaViva(numeroMesa, item) {
 
     mesa.itens.push({
       ...item,
-      id: item.id || `local-${Date.now()}`
+      id: item.id || gerarIdItem("local")
     });
 
     salvarMesas();
@@ -231,22 +239,26 @@ async function abrirMesa(numero) {
   }, 80);
 }
 
-async function atualizarNomeMesa(numero, valor) {
+function atualizarNomeMesa(numero, valor) {
   const mesa = encontrarMesa(numero);
   if (!mesa) return;
 
-  mesa.nome = valor.trim();
+  mesa.nome = valor;
 
   salvarMesas();
   renderMesas();
 
-  try {
-    if (typeof atualizarNomePedidoAberto === "function") {
-      await atualizarNomePedidoAberto(numero, mesa.nome);
+  if (timerAtualizarNomeMesa) clearTimeout(timerAtualizarNomeMesa);
+
+  timerAtualizarNomeMesa = setTimeout(async () => {
+    try {
+      if (typeof atualizarNomePedidoAberto === "function") {
+        await atualizarNomePedidoAberto(numero, mesa.nome.trim());
+      }
+    } catch (erro) {
+      console.error("Erro ao atualizar nome no banco:", erro);
     }
-  } catch (erro) {
-    console.error("Erro ao atualizar nome no banco:", erro);
-  }
+  }, 700);
 }
 
 function renderPainel(mesa) {
@@ -267,6 +279,8 @@ function renderPainel(mesa) {
           type="text"
           placeholder="Nome do cliente (opcional)"
           value="${mesa.nome || ""}"
+          onfocus="digitandoNomeCliente = true"
+          onblur="digitandoNomeCliente = false"
           oninput="atualizarNomeMesa(${mesa.numero}, this.value)"
         />
       </div>
@@ -452,7 +466,7 @@ function removerItem(numeroMesa, idProduto) {
 
 async function adicionarItemSimples(numeroMesa, produto) {
   const item = {
-    id: produto.id,
+    id: gerarIdItem(produto.id),
     produto_id: produto.id,
     nome: produto.nome,
     tamanho: "",
@@ -472,7 +486,7 @@ async function confirmarVariacaoProduto() {
   const opcao = produto.tamanhos[modalVariacao.tamanhoIndex];
 
   const item = {
-    id: `${produto.id}-${modalVariacao.tamanhoIndex}`,
+    id: gerarIdItem(`${produto.id}-${modalVariacao.tamanhoIndex}`),
     produto_id: produto.id,
     nome: produto.nome,
     tamanho: opcao.label,
@@ -516,7 +530,7 @@ async function confirmarPizza() {
   }
 
   const item = {
-    id: `pizza-${Date.now()}`,
+    id: gerarIdItem("pizza"),
     produto_id: modalPizza.pizza1.id,
     nome,
     tamanho: tamanho.label,
@@ -824,6 +838,7 @@ function iniciarRealtimeMesas() {
           table: "pedidos_abertos"
         },
         async () => {
+          if (digitandoNomeCliente) return;
           await carregarComandasAbertasDoBanco();
         }
       )
@@ -835,6 +850,7 @@ function iniciarRealtimeMesas() {
           table: "itens_pedido_aberto"
         },
         async () => {
+          if (digitandoNomeCliente) return;
           await carregarComandasAbertasDoBanco();
         }
       )

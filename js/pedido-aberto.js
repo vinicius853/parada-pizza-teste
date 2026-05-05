@@ -4,6 +4,17 @@
    PEDIDO-ABERTO.JS — Comanda viva no Supabase
 ══════════════════════════════════════════════ */
 
+function ordenarItensComanda(itens = []) {
+  return [...itens].sort((a, b) => {
+    const dataA = new Date(a.data_criacao || a.created_at || 0).getTime();
+    const dataB = new Date(b.data_criacao || b.created_at || 0).getTime();
+
+    if (dataA !== dataB) return dataA - dataB;
+
+    return String(a.id || '').localeCompare(String(b.id || ''));
+  });
+}
+
 async function buscarPedidoAbertoPorMesa(numeroMesa) {
   const { data, error } = await supabaseClient
     .from('pedidos_abertos')
@@ -56,10 +67,11 @@ async function buscarItensPedidoAberto(pedidoAbertoId) {
     .from('itens_pedido_aberto')
     .select('*')
     .eq('pedido_aberto_id', pedidoAbertoId)
-    .order('data_criacao', { ascending: true });
+    .order('data_criacao', { ascending: true })
+    .order('id', { ascending: true });
 
   if (error) throw error;
-  return data || [];
+  return ordenarItensComanda(data || []);
 }
 
 async function salvarItemPedidoAberto(numeroMesa, item) {
@@ -69,7 +81,7 @@ async function salvarItemPedidoAberto(numeroMesa, item) {
     .from('itens_pedido_aberto')
     .insert({
       pedido_aberto_id: pedido.id,
-      produto_id: String(item.id || ''),
+      produto_id: String(item.produto_id || item.id || ''),
       nome: item.nome,
       tamanho: item.tamanho || '',
       observacao: item.observacao || '',
@@ -152,7 +164,12 @@ async function carregarComandasAbertas() {
 
   if (error) throw error;
 
-  return data || [];
+  const comandas = data || [];
+
+  return comandas.map(comanda => ({
+    ...comanda,
+    itens_pedido_aberto: ordenarItensComanda(comanda.itens_pedido_aberto || [])
+  }));
 }
 
 async function fecharPedidoAberto(numeroMesa, pagamento = 'Não informado') {
@@ -180,12 +197,9 @@ async function fecharPedidoAberto(numeroMesa, pagamento = 'Não informado') {
     return acc + Number(item.preco || 0) * Number(item.qtd || 0);
   }, 0);
 
-  const numeroPedido = Date.now();
-
   const { data: pedidoFinal, error: erroPedido } = await supabaseClient
     .from('pedidos')
     .insert({
-      numero_pedido: numeroPedido,
       origem: 'garcom',
       tipo: 'mesa',
       mesa: numeroMesa,
@@ -216,6 +230,7 @@ async function fecharPedidoAberto(numeroMesa, pagamento = 'Não informado') {
   return pedidoFinal;
 }
 
+window.ordenarItensComanda = ordenarItensComanda;
 window.buscarPedidoAbertoPorMesa = buscarPedidoAbertoPorMesa;
 window.criarPedidoAberto = criarPedidoAberto;
 window.atualizarNomePedidoAberto = atualizarNomePedidoAberto;
