@@ -17,90 +17,149 @@ function estiloImpressaoTermica() {
     }
 
     body {
-      font-family: "Courier New", monospace;
+      font-family: monospace;
+      font-weight: 700;
       width: 72mm;
       max-width: 72mm;
       padding: 4mm;
-      font-size: 12px;
-      line-height: 1.3;
+      font-size: 13px;
+      line-height: 1.45;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
 
-    h2, h3, p {
+    .topo {
       text-align: center;
-      margin: 2px 0;
-      padding: 0;
+      margin-bottom: 6px;
     }
 
-    h2 {
-      font-size: 16px;
+    .empresa {
+      font-size: 20px;
       font-weight: 900;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .documento {
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .mesa-destaque {
+      font-size: 26px;
+      font-weight: 900;
+      text-align: center;
+      margin: 8px 0 6px;
       text-transform: uppercase;
       letter-spacing: 1px;
     }
 
-    h3 {
+    .info {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .linha {
+      border-top: 2px dashed #000;
+      margin: 10px 0;
+    }
+
+    .linha-fina {
+      border-top: 1px dashed #000;
+      margin: 7px 0;
+    }
+
+    .secao {
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      letter-spacing: .5px;
+    }
+
+    .item {
+      padding: 8px 0;
+      border-bottom: 1px dashed #999;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .item-nome {
+      font-size: 17px;
+      font-weight: 900;
+      text-transform: uppercase;
+      word-break: break-word;
+      letter-spacing: .3px;
+    }
+
+    .item-info {
+      display: block;
+      margin-top: 3px;
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      word-break: break-word;
+    }
+
+    .item-obs {
+      display: block;
+      margin-top: 4px;
+      padding: 3px 0;
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      word-break: break-word;
+    }
+
+    .item-total {
+      margin-top: 4px;
+      text-align: right;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .total {
+      margin-top: 12px;
+      padding-top: 8px;
+      border-top: 2px solid #000;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 25px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    .pagamento {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .rodape {
+      margin-top: 14px;
+      text-align: center;
       font-size: 13px;
       font-weight: 900;
       text-transform: uppercase;
     }
 
-    .aviso {
+    .assinatura {
+      margin-top: 22px;
       text-align: center;
-      font-weight: 900;
-      font-size: 18px;
-      margin: 7px 0;
+      font-size: 12px;
+      font-weight: 800;
     }
 
-    .linha {
-      border-top: 1px dashed #000;
-      margin: 8px 0;
-    }
-
-    .item {
-      padding: 6px 0;
-      border-bottom: 1px dashed #000;
-    }
-
-    .item-nome {
-      font-size: 13px;
-      font-weight: 900;
-      word-break: break-word;
-    }
-
-    .item-info {
-      display: block;
-      margin-top: 2px;
-      font-size: 11px;
-      word-break: break-word;
-    }
-
-    .item-total {
-      margin-top: 3px;
-      text-align: right;
-      font-size: 13px;
-      font-weight: 900;
-    }
-
-    .total {
-      margin-top: 8px;
-      text-align: right;
-      font-size: 18px;
-      font-weight: 900;
-      border-top: 2px solid #000;
-      padding-top: 6px;
-    }
-
-    .pagamento {
-      margin-top: 6px;
-      text-align: center;
-      font-size: 13px;
-      font-weight: 900;
-    }
-
-    .rodape {
-      margin-top: 10px;
-      text-align: center;
-      font-size: 11px;
+    .assinatura-linha {
+      border-top: 1px solid #000;
+      margin: 18px 8mm 3px;
     }
   `;
 }
@@ -111,6 +170,46 @@ function limparTextoTermico(texto) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^\x20-\x7EÀ-ÿ]/g, "")
     .trim();
+}
+
+function dataHoraImpressao() {
+  return new Date().toLocaleString("pt-BR");
+}
+
+function escaparRegex(texto) {
+  return String(texto || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function normalizarComparacaoTermica(texto) {
+  return limparTextoTermico(texto).toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function normalizarNomeItemImpressao(item) {
+  let nome = limparTextoTermico(item.nome);
+  const tamanho = limparTextoTermico(item.tamanho || "");
+
+  if (tamanho) {
+    nome = nome
+      .replace(new RegExp(`\\s*-?\\s*${escaparRegex(tamanho)}\\s*$`, "i"), "")
+      .trim();
+  }
+
+  return nome;
+}
+
+function deveMostrarObservacao(item) {
+  const observacao = normalizarComparacaoTermica(item.observacao || "");
+  const tamanho = normalizarComparacaoTermica(item.tamanho || "");
+
+  if (!observacao) return false;
+  if (observacao === tamanho) return false;
+
+  return true;
+}
+
+function nomeClienteMesa(mesa) {
+  const nome = limparTextoTermico(mesa?.nome || "");
+  return nome ? `Cliente: ${nome}<br>` : "";
 }
 
 function imprimirHtmlTermico(html) {
@@ -139,45 +238,70 @@ function imprimirHtmlTermico(html) {
   };
 }
 
-function montarHtmlComandaCozinha(mesa) {
-  const itensHtml = mesa.itens.map(item => `
-    <div class="item">
-      <div class="item-nome">${Number(item.quantidade || 1)}x ${limparTextoTermico(item.nome)}</div>
-      ${item.tamanho ? `<span class="item-info">${limparTextoTermico(item.tamanho)}</span>` : ""}
-      ${item.observacao ? `<span class="item-info">${limparTextoTermico(item.observacao)}</span>` : ""}
-    </div>
-  `).join("");
-
+function montarHtmlBaseImpressao(titulo, conteudo, titleTag = "Comanda") {
   return `
     <!DOCTYPE html>
     <html lang="pt-BR">
       <head>
         <meta charset="UTF-8">
-        <title>Comanda Cozinha - Mesa ${mesa.numero}</title>
+        <title>${limparTextoTermico(titleTag)}</title>
         <style>${estiloImpressaoTermica()}</style>
       </head>
 
       <body>
-        <h2>PARADA DA PIZZA</h2>
-        <h3>COMANDA COZINHA</h3>
-
-        <div class="aviso">MESA ${mesa.numero}</div>
-
-        ${mesa.nome ? `<p>Cliente: ${limparTextoTermico(mesa.nome)}</p>` : ""}
-        <p>${new Date().toLocaleString("pt-BR")}</p>
-
-        <div class="linha"></div>
-
-        ${itensHtml}
-
-        <div class="linha"></div>
-
-        <div class="rodape">
-          Enviar para preparo
+        <div class="topo">
+          <div class="empresa">PARADA DA PIZZA</div>
+          <div class="documento">${limparTextoTermico(titulo)}</div>
         </div>
+
+        ${conteudo}
       </body>
     </html>
   `;
+}
+
+function montarHtmlComandaCozinha(mesa) {
+  const itensHtml = mesa.itens.map(item => `
+    <div class="item">
+      <div class="item-nome">
+        ${Number(item.quantidade || 1)}x ${normalizarNomeItemImpressao(item)}
+      </div>
+
+      ${item.tamanho ? `<span class="item-info">${limparTextoTermico(item.tamanho)}</span>` : ""}
+
+      ${deveMostrarObservacao(item)
+        ? `<span class="item-obs">OBS: ${limparTextoTermico(item.observacao)}</span>`
+        : ""
+      }
+    </div>
+  `).join("");
+
+  const conteudo = `
+    <div class="mesa-destaque">MESA ${mesa.numero}</div>
+
+    <div class="info">
+      ${nomeClienteMesa(mesa)}
+      ${dataHoraImpressao()}
+    </div>
+
+    <div class="linha"></div>
+
+    <div class="secao">Itens para preparo</div>
+
+    ${itensHtml}
+
+    <div class="linha"></div>
+
+    <div class="rodape">
+      Enviar para preparo
+    </div>
+  `;
+
+  return montarHtmlBaseImpressao(
+    "COMANDA COZINHA",
+    conteudo,
+    `Comanda Cozinha - Mesa ${mesa.numero}`
+  );
 }
 
 function montarHtmlComandaCliente(mesa) {
@@ -189,45 +313,53 @@ function montarHtmlComandaCliente(mesa) {
 
     return `
       <div class="item">
-        <div class="item-nome">${qtd}x ${limparTextoTermico(item.nome)}</div>
+        <div class="item-nome">
+          ${qtd}x ${normalizarNomeItemImpressao(item)}
+        </div>
+
         ${item.tamanho ? `<span class="item-info">${limparTextoTermico(item.tamanho)}</span>` : ""}
-        ${item.observacao ? `<span class="item-info">${limparTextoTermico(item.observacao)}</span>` : ""}
+
+        ${deveMostrarObservacao(item)
+          ? `<span class="item-info">${limparTextoTermico(item.observacao)}</span>`
+          : ""
+        }
+
         <div class="item-total">${formatarMoeda(subtotal)}</div>
       </div>
     `;
   }).join("");
 
-  return `
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-      <head>
-        <meta charset="UTF-8">
-        <title>Comanda Cliente - Mesa ${mesa.numero}</title>
-        <style>${estiloImpressaoTermica()}</style>
-      </head>
+  const conteudo = `
+    <div class="mesa-destaque">MESA ${mesa.numero}</div>
 
-      <body>
-        <h2>PARADA DA PIZZA</h2>
-        <h3>COMANDA CLIENTE</h3>
+    <div class="info">
+      ${nomeClienteMesa(mesa)}
+      ${dataHoraImpressao()}
+    </div>
 
-        <p>Mesa ${mesa.numero}</p>
-        ${mesa.nome ? `<p>Cliente: ${limparTextoTermico(mesa.nome)}</p>` : ""}
-        <p>${new Date().toLocaleString("pt-BR")}</p>
+    <div class="linha"></div>
 
-        <div class="linha"></div>
+    <div class="secao">Consumo</div>
 
-        ${itensHtml}
+    ${itensHtml}
 
-        <div class="total">
-          TOTAL: ${formatarMoeda(total)}
-        </div>
+    <div class="total">
+      <span>Total</span>
+      <span>${formatarMoeda(total)}</span>
+    </div>
 
-        <div class="rodape">
-          Obrigado pela preferência!
-        </div>
-      </body>
-    </html>
+    <div class="linha-fina"></div>
+
+    <div class="rodape">
+      Obrigado pela preferencia!
+    </div>
   `;
+
+  return montarHtmlBaseImpressao(
+    "RECIBO DO CLIENTE",
+    conteudo,
+    `Comanda Cliente - Mesa ${mesa.numero}`
+  );
 }
 
 function montarHtmlFechamentoMesa(mesa, formaPagamento) {
@@ -239,50 +371,60 @@ function montarHtmlFechamentoMesa(mesa, formaPagamento) {
 
     return `
       <div class="item">
-        <div class="item-nome">${qtd}x ${limparTextoTermico(item.nome)}</div>
+        <div class="item-nome">
+          ${qtd}x ${normalizarNomeItemImpressao(item)}
+        </div>
+
         ${item.tamanho ? `<span class="item-info">${limparTextoTermico(item.tamanho)}</span>` : ""}
-        ${item.observacao ? `<span class="item-info">${limparTextoTermico(item.observacao)}</span>` : ""}
+
+        ${deveMostrarObservacao(item)
+          ? `<span class="item-info">${limparTextoTermico(item.observacao)}</span>`
+          : ""
+        }
+
         <div class="item-total">${formatarMoeda(subtotal)}</div>
       </div>
     `;
   }).join("");
 
-  return `
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-      <head>
-        <meta charset="UTF-8">
-        <title>Fechamento Mesa ${mesa.numero}</title>
-        <style>${estiloImpressaoTermica()}</style>
-      </head>
+  const conteudo = `
+    <div class="mesa-destaque">MESA ${mesa.numero}</div>
 
-      <body>
-        <h2>PARADA DA PIZZA</h2>
-        <h3>FECHAMENTO</h3>
+    <div class="info">
+      ${nomeClienteMesa(mesa)}
+      ${dataHoraImpressao()}
+    </div>
 
-        <div class="aviso">MESA ${mesa.numero}</div>
+    <div class="linha"></div>
 
-        ${mesa.nome ? `<p>Cliente: ${limparTextoTermico(mesa.nome)}</p>` : ""}
-        <p>${new Date().toLocaleString("pt-BR")}</p>
+    <div class="secao">Fechamento da comanda</div>
 
-        <div class="linha"></div>
+    ${itensHtml}
 
-        ${itensHtml}
+    <div class="total">
+      <span>Total</span>
+      <span>${formatarMoeda(total)}</span>
+    </div>
 
-        <div class="total">
-          TOTAL: ${formatarMoeda(total)}
-        </div>
+    <div class="pagamento">
+      Pagamento: ${limparTextoTermico(formaPagamento)}
+    </div>
 
-        <div class="pagamento">
-          Pagamento: ${limparTextoTermico(formaPagamento)}
-        </div>
+    <div class="assinatura">
+      <div class="assinatura-linha"></div>
+      Assinatura / Conferencia
+    </div>
 
-        <div class="rodape">
-          Obrigado pela preferência!
-        </div>
-      </body>
-    </html>
+    <div class="rodape">
+      Obrigado pela preferencia!
+    </div>
   `;
+
+  return montarHtmlBaseImpressao(
+    "FECHAMENTO",
+    conteudo,
+    `Fechamento Mesa ${mesa.numero}`
+  );
 }
 
 function imprimirComandaCozinha(numeroMesa) {
@@ -316,7 +458,14 @@ function imprimirFechamentoMesa(mesa, formaPagamento) {
 /* EXPOSIÇÃO GLOBAL - NECESSÁRIA COM <script> SEM MÓDULOS */
 window.estiloImpressaoTermica = estiloImpressaoTermica;
 window.limparTextoTermico = limparTextoTermico;
+window.dataHoraImpressao = dataHoraImpressao;
+window.escaparRegex = escaparRegex;
+window.normalizarComparacaoTermica = normalizarComparacaoTermica;
+window.normalizarNomeItemImpressao = normalizarNomeItemImpressao;
+window.deveMostrarObservacao = deveMostrarObservacao;
+window.nomeClienteMesa = nomeClienteMesa;
 window.imprimirHtmlTermico = imprimirHtmlTermico;
+window.montarHtmlBaseImpressao = montarHtmlBaseImpressao;
 window.montarHtmlComandaCozinha = montarHtmlComandaCozinha;
 window.montarHtmlComandaCliente = montarHtmlComandaCliente;
 window.montarHtmlFechamentoMesa = montarHtmlFechamentoMesa;

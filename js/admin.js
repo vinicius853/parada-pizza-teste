@@ -787,10 +787,10 @@ function montarHtmlPedidoImpressao(p) {
     ? `
       <div class="sep"></div>
       <div class="titulo">ENDERECO</div>
-      <div>${limparTextoImpressao(p.endereco.rua)}, ${limparTextoImpressao(p.endereco.numero)}</div>
-      <div>${limparTextoImpressao(p.endereco.bairro)}</div>
-      <div>${limparTextoImpressao(p.endereco.cidade)}${p.endereco.uf ? ' - ' + limparTextoImpressao(p.endereco.uf) : ''}</div>
-      ${p.endereco.cep ? `<div>CEP: ${limparTextoImpressao(p.endereco.cep)}</div>` : ''}
+      <div class="linha">${limparTextoImpressao(p.endereco.rua)}, ${limparTextoImpressao(p.endereco.numero)}</div>
+      <div class="linha">${limparTextoImpressao(p.endereco.bairro)}</div>
+      <div class="linha">${limparTextoImpressao(p.endereco.cidade)}${p.endereco.uf ? ' - ' + limparTextoImpressao(p.endereco.uf) : ''}</div>
+      ${p.endereco.cep ? `<div class="linha">CEP: ${limparTextoImpressao(p.endereco.cep)}</div>` : ''}
     `
     : '';
 
@@ -811,7 +811,7 @@ function montarHtmlPedidoImpressao(p) {
           </div>
         `;
       }).join('')
-    : '<div>Nenhum item informado</div>';
+    : '<div class="linha">Nenhum item informado</div>';
 
   return `
     <!DOCTYPE html>
@@ -829,15 +829,24 @@ function montarHtmlPedidoImpressao(p) {
           box-sizing: border-box;
         }
 
+        html,
         body {
           margin: 0;
-          padding: 4mm;
-          width: 72mm;
-          font-family: "Courier New", monospace;
-          font-size: 12px;
-          line-height: 1.35;
-          color: #000;
+          padding: 0;
           background: #fff;
+          color: #000;
+        }
+
+        body {
+          width: 72mm;
+          max-width: 72mm;
+          padding: 4mm;
+          font-family: monospace;
+          font-size: 14px;
+          font-weight: 800;
+          line-height: 1.5;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
         }
 
         .center {
@@ -846,84 +855,108 @@ function montarHtmlPedidoImpressao(p) {
 
         .logo {
           text-align: center;
-          font-size: 17px;
+          font-size: 21px;
           font-weight: 900;
-          letter-spacing: 1px;
-          margin-bottom: 3px;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          margin-bottom: 2px;
         }
 
         .sublogo {
           text-align: center;
-          font-size: 11px;
-          margin-bottom: 6px;
+          font-size: 14px;
+          font-weight: 900;
+          text-transform: uppercase;
+          margin-bottom: 7px;
         }
 
         .sep {
-          border-top: 1px dashed #000;
-          margin: 8px 0;
+          border-top: 2px dashed #000;
+          margin: 10px 0;
         }
 
         .linha {
-          margin: 3px 0;
+          margin: 4px 0;
+          font-size: 14px;
+          font-weight: 900;
           word-break: break-word;
         }
 
         .titulo {
+          font-size: 14px;
           font-weight: 900;
-          margin-bottom: 5px;
+          text-transform: uppercase;
+          margin-bottom: 6px;
+          letter-spacing: .4px;
+        }
+
+        .pedido-label {
+          text-align: center;
+          font-size: 15px;
+          font-weight: 900;
           text-transform: uppercase;
         }
 
         .pedido-numero {
           text-align: center;
-          font-size: 20px;
+          font-size: 26px;
           font-weight: 900;
-          margin: 6px 0;
+          margin: 7px 0;
+          letter-spacing: 1px;
         }
 
         .item {
-          padding: 6px 0;
-          border-bottom: 1px dashed #000;
+          padding: 8px 0;
+          border-bottom: 1px dashed #999;
+          page-break-inside: avoid;
+          break-inside: avoid;
         }
 
         .item-nome {
+          font-size: 17px;
           font-weight: 900;
-          font-size: 13px;
+          word-break: break-word;
         }
 
         .item-info {
-          font-size: 11px;
-          margin-top: 2px;
+          font-size: 13px;
+          font-weight: 800;
+          margin-top: 3px;
+          word-break: break-word;
         }
 
         .item-total {
           text-align: right;
           font-weight: 900;
-          font-size: 13px;
-          margin-top: 3px;
+          font-size: 16px;
+          margin-top: 4px;
         }
 
         .total-box {
-          margin-top: 8px;
-          padding-top: 6px;
+          margin-top: 12px;
+          padding-top: 8px;
           border-top: 2px solid #000;
         }
 
         .total-label {
-          font-size: 13px;
+          font-size: 15px;
           font-weight: 900;
+          text-transform: uppercase;
         }
 
         .total-valor {
           text-align: right;
-          font-size: 19px;
+          font-size: 27px;
           font-weight: 900;
+          letter-spacing: .5px;
         }
 
         .rodape {
           text-align: center;
-          margin-top: 10px;
-          font-size: 11px;
+          margin-top: 14px;
+          font-size: 13px;
+          font-weight: 900;
+          text-transform: uppercase;
         }
       </style>
     </head>
@@ -934,16 +967,16 @@ function montarHtmlPedidoImpressao(p) {
 
       <div class="sep"></div>
 
-      <div class="center"><strong>PEDIDO ONLINE</strong></div>
+      <div class="pedido-label">PEDIDO ONLINE</div>
       <div class="pedido-numero">#${getNumeroPedido(p)}</div>
 
-      <div class="linha"><strong>Tipo:</strong> ${tipoPedido}</div>
-      <div class="linha"><strong>Data:</strong> ${fmtData(p.data_criacao)}</div>
+      <div class="linha">Tipo: ${tipoPedido}</div>
+      <div class="linha">Data: ${fmtData(p.data_criacao)}</div>
 
       <div class="sep"></div>
 
-      <div class="linha"><strong>Cliente:</strong> ${limparTextoImpressao(p.nome || 'Nao informado')}</div>
-      ${p.telefone ? `<div class="linha"><strong>Telefone:</strong> ${limparTextoImpressao(p.telefone)}</div>` : ''}
+      <div class="linha">Cliente: ${limparTextoImpressao(p.nome || 'Nao informado')}</div>
+      ${p.telefone ? `<div class="linha">Telefone: ${limparTextoImpressao(p.telefone)}</div>` : ''}
 
       ${enderecoHtml}
 
@@ -955,7 +988,7 @@ function montarHtmlPedidoImpressao(p) {
       <div class="sep"></div>
 
       ${Number(p.taxa_entrega || 0) > 0 ? `
-        <div class="linha"><strong>Taxa entrega:</strong> R$ ${fmtPreco(p.taxa_entrega)}</div>
+        <div class="linha">Taxa entrega: R$ ${fmtPreco(p.taxa_entrega)}</div>
       ` : ''}
 
       <div class="total-box">
@@ -965,7 +998,7 @@ function montarHtmlPedidoImpressao(p) {
 
       <div class="sep"></div>
 
-      <div class="linha"><strong>Pagamento:</strong> ${limparTextoImpressao(p.pagamento || 'Nao informado')}</div>
+      <div class="linha">Pagamento: ${limparTextoImpressao(p.pagamento || 'Nao informado')}</div>
 
       <div class="rodape">
         Impresso automaticamente<br>
